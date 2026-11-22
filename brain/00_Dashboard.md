@@ -65,6 +65,6 @@ graph TD
 ---
 
 ## ⚡ Quick Links & Deliverables
-* Dokumen Usulan Resmi: [USULAN_MODIFIKASI_PENELITIAN_BISINDO.docx](file:///e:/Semester%205/C&V/jurnal/USULAN_MODIFIKASI_PENELITIAN_BISINDO.docx)
+* Dokumen Memory & State Sesi: [[PROJECT_MEMORY]]
+* Dokumen Usulan Resmi: [USULAN_MODIFIKASI_PENELITIAN_BISINDO.docx](file:///e:/Semester%205/C&V/Project%20Citra/brain/USULAN_MODIFIKASI_PENELITIAN_BISINDO.docx)
 * Panduan Saran Fitur: [[SARAN_MODIFIKASI_FITUR_BISINDO]]
-* Folder Jurnal Sumber: `V1/` (Agent A) dan `V2/` (Agent B)
