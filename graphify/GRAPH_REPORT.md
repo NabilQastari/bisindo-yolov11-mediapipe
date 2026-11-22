@@ -1,7 +1,7 @@
 # Graph Report - brain  (2026-11-23)
 
 ## Corpus Check
-- 11 files · ~5,062 words
+- 11 files · ~5,139 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4c609c14`
+- Built from commit: `4544274d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -33,11 +33,11 @@
 3. `📖 Review Paper Acuan: Alsharif et al. (2025)` - 5 edges
 4. `DOKUMEN SARAN MODIFIKASI FITUR TAMBAHAN (BISINDO)` - 5 edges
 5. `🗂️ Sumber Dataset Terkurasi & Siap Pakai` - 5 edges
-6. `🚀 Dashboard Utama: Sistem Penerjemah BISINDO Real-Time` - 4 edges
-7. `📂 Struktur Modul Knowledge Base` - 4 edges
-8. `2. Inovasi & Modifikasi Ilmiah` - 4 edges
-9. `4. Rincian Teknis Tiga Modifikasi` - 4 edges
-10. `💡 Ikhtisar Konsep Modifikasi Sistem BISINDO` - 4 edges
+6. `2. Inovasi & Modifikasi Ilmiah` - 4 edges
+7. `4. Rincian Teknis Tiga Modifikasi` - 4 edges
+8. `💡 Ikhtisar Konsep Modifikasi Sistem BISINDO` - 4 edges
+9. `🧩 Tiga Pilar Modifikasi Kunci` - 4 edges
+10. `🚀 Dashboard Utama: Sistem Penerjemah BISINDO Real-Time` - 4 edges
 
 ## Surprising Connections (you probably didn't know these)
 - None detected - all connections are within the same source files.
