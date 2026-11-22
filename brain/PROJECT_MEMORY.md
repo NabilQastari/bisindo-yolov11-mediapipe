@@ -98,24 +98,30 @@ E:\Semester 5\C&V\Project Citra\
 - [x] Pemilihan paper benchmark (*Alsharif et al., Sensors MDPI 2025*).
 - [x] Perumusan modifikasi ilmiah spesifik BISINDO (Dual-Hand Unified Box + Velocity Filter + Geometric Disambiguation).
 - [x] Pembuatan dokumen resmi usulan penelitian dalam format `.docx` dan Markdown.
-- [x] Perumusan 2 opsi fitur modifikasi cadangan (Temporal Motion Sequence & Edge INT8 Quantization).
-- [x] Penyusunan Obsidian Vault `brain` lengkap dengan link relasi antar-catatan.
-- [x] Setup isolasi Python Virtual Environment di Drive E:.
-- [x] Instalasi paket `graphifyy` dan pembuatan knowledge graph interaktif.
-- [x] Inisialisasi Git, branch `main`, binding remote origin GitHub `https://github.com/NabilQastari/bisindo-yolov11-mediapipe.git`.
-- [x] Push perdana repositori ke GitHub (Clean tree & tracking aktif).
+- [x] Konfirmasi Dosen: **Usulan Utama Disetujui Penuh** (Opsi Cadangan 1 disiapkan untuk fase lanjutan).
+- [x] Setup isolasi Python Virtual Environment di Drive E: (`venv`).
+- [x] Instalasi dependensi CV lengkap (`torch`, `torchvision`, `opencv-python`, `mediapipe`, `ultralytics`).
+- [x] Deteksi Hardware: AMD Radeon™ Graphics (iGPU) — optimasi inferensi CPU via Velocity Filter divalidasi.
+- [x] Implementasi kode modular `src/`:
+  - `src/utils/box_utils.py`: Adaptive Dual-Hand Unified Bounding Box (42 keypoints).
+  - `src/utils/geometry.py`: 3D joint angle calculations & finger disambiguation.
+  - `src/modules/velocity_filter.py`: Velocity-Aware Transition Filter (Anti-ghost recognition).
+  - `src/modules/dual_hand_detector.py`: MediaPipe Tasks HandLandmarker 42 keypoints extractor.
+  - `src/dataset/prep_dataset.py`: MediaPipe-based auto-annotator & YOLO format splitter.
+  - `src/pipeline.py`: Real-time webcam pipeline dengan UI visual & text buffer.
+  - `src/train.py`: Skrip training transfer learning YOLOv11n.
+- [x] Penemuan dataset lokal di `E:\Semester 5\C&V\Dataset\data 1\Citra BISINDO` (26 kelas alfabet A-Z).
+- [x] Auto-anotasi & partisi dataset ke `data/bisindo_yolo/` (312 citra, train: 234, val: 26, test: 52, `data.yaml` siap).
 
 ---
 
 ## 6. Roadmap Sesi Berikutnya
-1. **Fase Konfirmasi Akademik**:
-   * Evaluasi feedback dosen terhadap berkas `USULAN_MODIFIKASI_PENELITIAN_BISINDO.docx`.
-   * Keputusan akhir: lanjut dengan Usulan Utama atau switch ke Usulan Cadangan 1 / 2.
-2. **Fase Dataset & Preprocessing**:
-   * Menyiapkan folder `data/` (di partisi E:).
-   * Download & split dataset BISINDO (Kaggle BISINDO 26 Alfabet / Roboflow).
-   * Scripting generator bounding box adaptif (MediaPipe 42 landmarks $\rightarrow$ YOLO format `.txt`).
-3. **Fase Pipeline Development**:
-   * Implementasi modul `dual_hand_detector.py`.
-   * Implementasi modul `velocity_filter.py`.
-   * Setup training script YOLOv11 nano/small dengan transfer learning.
+1. **Fase Pelatihan Model (YOLOv11n Training)**:
+   - Menjalankan `src/train.py` dengan transfer learning pada dataset `data/bisindo_yolo/data.yaml`.
+   - Mengevaluasi metrik evaluasi: mAP@50, mAP@50-95, precision, recall, dan confusion matrix.
+2. **Fase Pengujian Real-Time**:
+   - Menjalankan `src/pipeline.py --model weights/bisindo_yolov11n_best.pt` via webcam.
+   - Menguji keandalan *Velocity Filter* saat perpindahan isyarat tangan (mencegah *ghost detection*).
+   - Menguji akurasi modul disambiguasi geometris untuk pasangan huruf ambigu (M vs N).
+3. **Fase Ekspansi Lanjutan (Opsional/Sesuai Arahan)**:
+   - Integrasi Opsi Cadangan 1 (Buffer sequence Bi-LSTM untuk kata bergerak dinamis).

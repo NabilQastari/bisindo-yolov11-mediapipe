@@ -32,10 +32,14 @@ wheels/
 *.pth
 *.onnx
 *.weights
+*.task
+weights/
 
 # Datasets (File citra raw berukuran GB)
 data/raw/
+data/bisindo_yolo/images/
 datasets/
+runs/
 *.zip
 *.tar.gz
 
