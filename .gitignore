@@ -1,0 +1,62 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Python virtual environment (strictly kept on partition E, not pushed to git)
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyTorch / Deep Learning Weights (File besar jangan di-push ke git)
+*.pt
+*.pth
+*.onnx
+*.weights
+
+# Datasets (File citra raw berukuran GB)
+data/raw/
+datasets/
+*.zip
+*.tar.gz
+
+# Obsidian Vault workspace state (Hanya simpan catatan .md, abaikan state posisi window lokal)
+brain/.obsidian/workspace.json
+brain/.obsidian/workspace-mobile.json
+brain/.obsidian/cache/
+brain/.trash/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Graphify temporary caches & generated internal states
+cache/
+*/cache/
+.pip_cache/
+*.graphify_build_state.json
+*.graphify_partition_cache.json
+*.graphify_labels.pending.json
+*.graphify_labels.json.sig
+*.graphify_root
+brain/graphify-out/

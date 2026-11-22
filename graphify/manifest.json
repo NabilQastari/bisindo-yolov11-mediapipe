@@ -1,0 +1,62 @@
+{
+  "00_Dashboard.md": {
+    "mtime": 1795359885.8312492,
+    "seen": 1795363782.9366834,
+    "ast_hash": "4989169e43ef258008f6ed50df45d5c0",
+    "semantic_hash": ""
+  },
+  "01_Literature_Review/Paper_Alsharif_2025.md": {
+    "mtime": 1795359906.6598876,
+    "seen": 1795363782.9366834,
+    "ast_hash": "d4cef03805126bf0910439200601c365",
+    "semantic_hash": ""
+  },
+  "02_Proposed_System/Concept_Overview.md": {
+    "mtime": 1795359929.545298,
+    "seen": 1795363782.9366834,
+    "ast_hash": "f76cb1529f16e54e8ec3cb88fe3a24c2",
+    "semantic_hash": ""
+  },
+  "02_Proposed_System/Dual_Hand_Unified_Box.md": {
+    "mtime": 1795359952.0476966,
+    "seen": 1795363782.9366834,
+    "ast_hash": "1223f86d634095fb8683b89cb23c529f",
+    "semantic_hash": ""
+  },
+  "02_Proposed_System/Geometric_Disambiguation.md": {
+    "mtime": 1795359996.5574863,
+    "seen": 1795363782.9366834,
+    "ast_hash": "59cc282463c53503d2749ccd8a4a2311",
+    "semantic_hash": ""
+  },
+  "02_Proposed_System/Velocity_Aware_Filter.md": {
+    "mtime": 1795359974.9339118,
+    "seen": 1795363782.9366834,
+    "ast_hash": "8393033d62a78a36e376801ec7470d9e",
+    "semantic_hash": ""
+  },
+  "03_Datasets/BISINDO_Datasets_Catalog.md": {
+    "mtime": 1795360016.1058235,
+    "seen": 1795363782.9366834,
+    "ast_hash": "f022e7b3d63d19fbdfb85e54f0e1b750",
+    "semantic_hash": ""
+  },
+  "04_Implementation/Pipeline_Architecture.md": {
+    "mtime": 1795360039.9338763,
+    "seen": 1795363782.9366834,
+    "ast_hash": "b77ae048489fa9cdeef969d85b5380ef",
+    "semantic_hash": ""
+  },
+  "PLANNING_MODIFIKASI_PENELITIAN.md": {
+    "mtime": 1795015393.2571619,
+    "seen": 1795363782.9366834,
+    "ast_hash": "fa96f286e93e9a17ff4a07a341105d38",
+    "semantic_hash": ""
+  },
+  "SARAN_MODIFIKASI_FITUR_BISINDO.md": {
+    "mtime": 1795053354.0537708,
+    "seen": 1795363782.9366834,
+    "ast_hash": "eb662fe8d080bd903a8136b25a0a02f8",
+    "semantic_hash": ""
+  }
+}
