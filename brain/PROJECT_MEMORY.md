@@ -112,19 +112,19 @@ E:\Semester 5\C&V\Project Citra\
   - `src/train.py`: Skrip training transfer learning YOLOv11n.
 - [x] Penemuan dataset lokal di `E:\Semester 5\C&V\Dataset\data 1\Citra BISINDO` (26 kelas alfabet A-Z).
 - [x] Auto-anotasi & partisi dataset ke `data/bisindo_yolo/` (312 citra, train: 234, val: 26, test: 52, `data.yaml` siap).
-- [x] Peluncuran Training YOLOv11n (Transfer Learning 30 Epochs, AdamW lr=0.000333, batch=8).
-- [x] Dokumentasi Laporan Eksperimen & Bukti Log Training: `brain/04_Implementation/Training_Report_YOLOv11n.md` & `brain/assets/training_yolov11n_progress.jpg`.
+- [x] Peluncuran & Penyelesaian Training YOLOv11n (30 Epochs selesai 100% dalam 1,041 jam di AMD Ryzen 3 4300U).
+- [x] Evaluasi Performa Model: **mAP@50 = 88.3%**, **mAP@50-95 = 71.7%**, Bobot tersimpan di `weights/bisindo_yolov11n_best.pt` (5.5 MB).
+- [x] Dokumentasi Lengkap Laporan Eksperimen & Plot Kurva: `brain/04_Implementation/Training_Report_YOLOv11n.md`.
 - [x] Validasi Pengujian Real-Time Webcam (Single-Hand & Dual-Hand 42 Keypoints berhasil diuji pada Webcam 3): `brain/04_Implementation/Realtime_Testing_Report.md`.
 
 ---
 
 ## 6. Roadmap Sesi Berikutnya
-1. **Fase Pelatihan Model (YOLOv11n Training)**:
-   - Menjalankan `src/train.py` dengan transfer learning pada dataset `data/bisindo_yolo/data.yaml`.
-   - Mengevaluasi metrik evaluasi: mAP@50, mAP@50-95, precision, recall, dan confusion matrix.
-2. **Fase Pengujian Real-Time**:
-   - Menjalankan `src/pipeline.py --model weights/bisindo_yolov11n_best.pt` via webcam.
-   - Menguji keandalan *Velocity Filter* saat perpindahan isyarat tangan (mencegah *ghost detection*).
-   - Menguji akurasi modul disambiguasi geometris untuk pasangan huruf ambigu (M vs N).
-3. **Fase Ekspansi Lanjutan (Opsional/Sesuai Arahan)**:
-   - Integrasi Opsi Cadangan 1 (Buffer sequence Bi-LSTM untuk kata bergerak dinamis).
+1. **Fase Pengujian Real-Time End-to-End dengan Model Aktif**:
+   - Menjalankan `run_pipeline.bat` untuk menguji inferensi langsung alfabet BISINDO dari webcam dengan bobot `weights/bisindo_yolov11n_best.pt`.
+   - Menguji perangkaian huruf menjadi kata/kalimat di buffer teks.
+   - Menguji keandalan modul disambiguasi M vs N secara langsung.
+2. **Fase Penyusunan Naskah Laporan Akhir**:
+   - Mengompilasi laporan eksperimen dan bukti visual ke dalam format laporan praktikum / artikel ilmiah lengkap.
+3. **Fase Ekspansi Lanjutan (Opsional/Sesuai Arahan Dosen)**:
+   - Integrasi Opsi Cadangan 1 (Buffer sequence Bi-LSTM untuk kata bergerak dinamis seperti huruf Z atau kata BISINDO).
