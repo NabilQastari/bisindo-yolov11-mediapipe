@@ -43,10 +43,8 @@ runs/
 *.zip
 *.tar.gz
 
-# Obsidian Vault workspace state (Hanya simpan catatan .md, abaikan state posisi window lokal)
-brain/.obsidian/workspace.json
-brain/.obsidian/workspace-mobile.json
-brain/.obsidian/cache/
+# Obsidian Vault workspace state (Hanya simpan catatan .md, abaikan folder state lokal)
+brain/.obsidian/
 brain/.trash/
 
 # OS specific files
