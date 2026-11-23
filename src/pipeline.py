@@ -32,7 +32,7 @@ import numpy as np
 from src.modules.dual_hand_detector import DualHandDetector, HandDetectionResult
 from src.modules.velocity_filter import VelocityAwareFilter, TransitionState
 from src.utils.box_utils import compute_dual_hand_unified_bbox
-from src.utils.geometry import count_extended_fingers
+from src.utils.geometry import count_extended_fingers, classify_gesture_landmarks
 
 
 def scan_available_cameras(max_to_test: int = 4) -> List[int]:
@@ -178,6 +178,7 @@ class BisindoPipeline:
         )
 
         active_pred = "-"
+        status_note = ""
         conf = 0.0
 
         if is_stable and bbox_dict['boxes']:
@@ -185,24 +186,38 @@ class BisindoPipeline:
                 xmin, ymin, xmax, ymax = box
                 cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
 
+            primary_lms = res.landmarks_right or res.landmarks_left
+
+            # 1. Geometric Landmark Analysis (Lighting & Subject Invariant)
+            geo_res = classify_gesture_landmarks(primary_lms)
+            geo_letter = geo_res['letter']
+            status_note = geo_res.get('note', '')
+
+            # 2. YOLOv11 Prediction (Predict on full frame for proper spatial context)
+            yolo_letter = "-"
+            yolo_conf = 0.0
             if self.yolo_model is not None:
-                primary_box = bbox_dict['boxes'][0]
-                xmin, ymin, xmax, ymax = primary_box
-                roi = frame[ymin:ymax, xmin:xmax]
-                if roi.size > 0:
-                    yolo_res = self.yolo_model.predict(roi, verbose=False, conf=0.35)
-                    if len(yolo_res[0].boxes) > 0:
-                        best = yolo_res[0].boxes[0]
-                        class_id = int(best.cls[0])
-                        conf = float(best.conf[0])
-                        raw_letter = self.yolo_model.names[class_id]
+                yolo_preds = self.yolo_model.predict(frame, verbose=False, conf=0.30)
+                if len(yolo_preds[0].boxes) > 0:
+                    best = yolo_preds[0].boxes[0]
+                    yolo_letter = self.yolo_model.names[int(best.cls[0])]
+                    yolo_conf = float(best.conf[0])
 
-                        primary_lms = res.landmarks_right or res.landmarks_left
-                        active_pred = self.disambiguate_letter(raw_letter, primary_lms)
+            # 3. Hybrid Fusion Logic
+            if geo_letter != "-":
+                active_pred = geo_letter
+                conf = geo_res['confidence']
+            elif yolo_letter != "-":
+                active_pred = self.disambiguate_letter(yolo_letter, primary_lms)
+                conf = yolo_conf
+            elif status_note:
+                active_pred = status_note
             else:
-                active_pred = "SIAP"
+                active_pred = "MENYESUAIKAN POSE..."
 
-            if active_pred not in ["-", "SIAP"]:
+            # Letter commit logic (must remain stable for 8 frames to append)
+            valid_letters = [chr(i) for i in range(ord('A'), ord('Z') + 1)]
+            if active_pred in valid_letters:
                 if active_pred == self.last_stable_letter:
                     self.stable_letter_frames += 1
                     if self.stable_letter_frames == 8:

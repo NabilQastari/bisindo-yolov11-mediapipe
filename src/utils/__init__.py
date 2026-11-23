@@ -11,7 +11,8 @@ from .box_utils import (
 from .geometry import (
     calculate_angle_3d,
     get_finger_flexion_angles,
-    is_finger_extended
+    is_finger_extended,
+    classify_gesture_landmarks
 )
 
 __all__ = [
@@ -22,5 +23,6 @@ __all__ = [
     "clip_bbox",
     "calculate_angle_3d",
     "get_finger_flexion_angles",
-    "is_finger_extended"
+    "is_finger_extended",
+    "classify_gesture_landmarks"
 ]

@@ -130,3 +130,62 @@ def count_extended_fingers(landmarks: List[Tuple[float, float, float]]) -> Dict[
 
     total_count = sum(1 for val in extended.values() if val)
     return {'extended': extended, 'total': total_count, 'angles': angles}
+
+
+def classify_gesture_landmarks(landmarks: List[Tuple[float, float, float]]) -> Dict[str, any]:
+    """
+    Classifies fundamental sign language alphabet poses based on 3D landmark geometry.
+    Complements YOLOv11 by providing invariant geometric pose verification.
+    """
+    if not landmarks or len(landmarks) < 21:
+        return {'letter': '-', 'confidence': 0.0, 'note': 'Landmark tidak lengkap'}
+
+    analysis = count_extended_fingers(landmarks)
+    ext = analysis['extended']
+    total = analysis['total']
+
+    # 1. 5 Fingers Open - Not an alphabet
+    if total == 5:
+        return {'letter': '-', 'confidence': 0.95, 'note': 'Tangan Terbuka (5 Jari) - Bukan Huruf'}
+
+    # 2. Letter L: Thumb + Index extended
+    if ext['thumb'] and ext['index'] and not ext['middle'] and not ext['ring'] and not ext['pinky']:
+        return {'letter': 'L', 'confidence': 0.95, 'note': 'Pose Huruf L (Ibu Jari + Telunjuk)'}
+
+    # 3. Letter V: Index + Middle extended
+    if ext['index'] and ext['middle'] and not ext['ring'] and not ext['pinky'] and not ext['thumb']:
+        return {'letter': 'V', 'confidence': 0.95, 'note': 'Pose Huruf V (Telunjuk + Tengah)'}
+
+    # 4. Letter W: Index + Middle + Ring extended
+    if ext['index'] and ext['middle'] and ext['ring'] and not ext['pinky'] and not ext['thumb']:
+        return {'letter': 'W', 'confidence': 0.92, 'note': 'Pose Huruf W (3 Jari Tegak)'}
+
+    # 5. Letter I: Only pinky extended
+    if ext['pinky'] and not ext['index'] and not ext['middle'] and not ext['ring'] and not ext['thumb']:
+        return {'letter': 'I', 'confidence': 0.95, 'note': 'Pose Huruf I (Kelingking Tegak)'}
+
+    # 6. Letter Y: Thumb + Pinky extended (shaka sign)
+    if ext['thumb'] and ext['pinky'] and not ext['index'] and not ext['middle'] and not ext['ring']:
+        return {'letter': 'Y', 'confidence': 0.95, 'note': 'Pose Huruf Y (Ibu Jari + Kelingking)'}
+
+    # 7. Letter B: 4 fingers extended, thumb folded
+    if ext['index'] and ext['middle'] and ext['ring'] and ext['pinky'] and not ext['thumb']:
+        return {'letter': 'B', 'confidence': 0.92, 'note': 'Pose Huruf B (4 Jari Rapat Tegak)'}
+
+    # 8. Letter D: Index extended, others touching/folded
+    if ext['index'] and not ext['middle'] and not ext['ring'] and not ext['pinky']:
+        return {'letter': 'D', 'confidence': 0.90, 'note': 'Pose Huruf D (Telunjuk Tegak)'}
+
+    # 9. Letter A / S / E / M / N (All fingers folded into fist)
+    if total == 0:
+        return {'letter': 'A', 'confidence': 0.85, 'note': 'Pose Kepalan Tangan (A/S)'}
+
+    # 10. Letter C: Check curvature between thumb tip and index tip
+    thumb_tip = np.array(landmarks[4])
+    index_tip = np.array(landmarks[8])
+    tip_dist = np.linalg.norm(thumb_tip - index_tip)
+    if 0.08 < tip_dist < 0.22 and not ext['pinky']:
+        return {'letter': 'C', 'confidence': 0.80, 'note': 'Pose Huruf C (Lengkung Telapak)'}
+
+    return {'letter': '-', 'confidence': 0.0, 'note': 'Mencari kecocokan alfabet...'}
+
