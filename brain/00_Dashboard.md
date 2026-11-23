@@ -61,6 +61,7 @@ graph TD
 ### 3. Data & Implementasi Teknis
 * [[BISINDO_Datasets_Catalog]] — Sumber dataset publik terverifikasi (Roboflow Universe, Mendeley Data, Kaggle).
 * [[Pipeline_Architecture]] — Alur kerja pemrosesan citra dari webcam hingga teks akhir.
+* [[Training_Report_YOLOv11n]] — Laporan eksperimen dan metrik pelatihan model YOLOv11n BISINDO.
 
 ---
 

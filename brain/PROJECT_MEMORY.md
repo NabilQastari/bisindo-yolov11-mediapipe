@@ -112,6 +112,8 @@ E:\Semester 5\C&V\Project Citra\
   - `src/train.py`: Skrip training transfer learning YOLOv11n.
 - [x] Penemuan dataset lokal di `E:\Semester 5\C&V\Dataset\data 1\Citra BISINDO` (26 kelas alfabet A-Z).
 - [x] Auto-anotasi & partisi dataset ke `data/bisindo_yolo/` (312 citra, train: 234, val: 26, test: 52, `data.yaml` siap).
+- [x] Peluncuran Training YOLOv11n (Transfer Learning 30 Epochs, AdamW lr=0.000333, batch=8).
+- [x] Dokumentasi Laporan Eksperimen & Bukti Log Training: `brain/04_Implementation/Training_Report_YOLOv11n.md` & `brain/assets/training_yolov11n_progress.jpg`.
 
 ---
 
