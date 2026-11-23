@@ -115,15 +115,20 @@ class BisindoPipeline:
             smoothing_alpha=0.65
         )
 
-        # 3. YOLOv11 Model
+        # 3. YOLOv11 Model (Auto-detect trained weights if not explicitly specified)
         self.yolo_model = None
+        if not yolo_model_path:
+            default_weights = PROJECT_ROOT / "weights" / "bisindo_yolov11n_best.pt"
+            if default_weights.exists():
+                yolo_model_path = str(default_weights)
+
         if yolo_model_path and Path(yolo_model_path).exists():
             from ultralytics import YOLO
             print(f"Memuat bobot YOLOv11 dari {yolo_model_path}...")
             self.yolo_model = YOLO(yolo_model_path)
             print("Model YOLOv11 siap digunakan.")
         else:
-            print("Berjalan dalam mode Preview Landmark & Filter Kecepatan (bobot YOLO belum diinput).")
+            print("Berjalan dalam mode Preview Landmark & Filter Kecepatan (bobot YOLO belum diinput/dilatih).")
 
         self.recognized_letters: List[str] = []
         self.last_stable_letter: str = ""
