@@ -1,16 +1,16 @@
 # Graph Report - brain  (2026-11-23)
 
 ## Corpus Check
-- 11 files · ~5,139 words
+- 12 files · ~5,814 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 86 nodes · 101 edges · 12 communities (11 shown, 1 thin omitted)
+- 93 nodes · 110 edges · 13 communities (12 shown, 1 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4544274d`
+- Built from commit: `93484d87`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -26,23 +26,24 @@
 - 🖐️ Modul Adaptive Unified Dual-Hand Bounding Box
 - 📐 Modul Geometric Disambiguation
 - 🏗️ Arsitektur Pipeline Sistem Keseluruhan
+- 📈 Laporan Pelatihan Model YOLOv11n BISINDO
 
 ## God Nodes (most connected - your core abstractions)
 1. `DOKUMEN PERENCANAAN MODIFIKASI PENELITIAN` - 9 edges
 2. `PROJECT MEMORY: BISINDO Hand Gesture Recognition (YOLOv11 + MediaPipe)` - 7 edges
-3. `📖 Review Paper Acuan: Alsharif et al. (2025)` - 5 edges
-4. `DOKUMEN SARAN MODIFIKASI FITUR TAMBAHAN (BISINDO)` - 5 edges
-5. `🗂️ Sumber Dataset Terkurasi & Siap Pakai` - 5 edges
-6. `2. Inovasi & Modifikasi Ilmiah` - 4 edges
-7. `4. Rincian Teknis Tiga Modifikasi` - 4 edges
-8. `💡 Ikhtisar Konsep Modifikasi Sistem BISINDO` - 4 edges
-9. `🧩 Tiga Pilar Modifikasi Kunci` - 4 edges
-10. `🚀 Dashboard Utama: Sistem Penerjemah BISINDO Real-Time` - 4 edges
+3. `📈 Laporan Pelatihan Model YOLOv11n BISINDO` - 5 edges
+4. `📖 Review Paper Acuan: Alsharif et al. (2025)` - 5 edges
+5. `DOKUMEN SARAN MODIFIKASI FITUR TAMBAHAN (BISINDO)` - 5 edges
+6. `🗂️ Sumber Dataset Terkurasi & Siap Pakai` - 5 edges
+7. `🚀 Dashboard Utama: Sistem Penerjemah BISINDO Real-Time` - 4 edges
+8. `📂 Struktur Modul Knowledge Base` - 4 edges
+9. `2. Inovasi & Modifikasi Ilmiah` - 4 edges
+10. `4. Rincian Teknis Tiga Modifikasi` - 4 edges
 
 ## Surprising Connections (you probably didn't know these)
 - None detected - all connections are within the same source files.
 
-## Communities (12 total, 1 thin omitted)
+## Communities (13 total, 1 thin omitted)
 
 ### Community 0 - "DOKUMEN PERENCANAAN MODIFIKASI PENELITIAN"
 Cohesion: 0.11
@@ -73,7 +74,7 @@ Cohesion: 0.50
 Nodes (4): 📐 Formulasi Matematis, 🚀 Keunggulan Teknis, 📌 Masalah yang Diselesaikan (*Ghost Detection*), ⏱️ Modul Velocity-Aware Transition Filter
 
 ### Community 8 - "PROJECT MEMORY: BISINDO Hand Gesture Recognition (YOLOv11 + MediaPipe)"
-Cohesion: 0.18
+Cohesion: 0.20
 Nodes (10): 1. Ringkasan Eksekutif & Identitas Proyek, 2. Inovasi & Modifikasi Ilmiah, 3. Lingkungan & Konfigurasi Teknis, 4. Struktur Direktori Proyek, 5. Status Progres Terakhir (Checklist), 6. Roadmap Sesi Berikutnya, Gap Penelitian dari Paper Acuan, PROJECT MEMORY: BISINDO Hand Gesture Recognition (YOLOv11 + MediaPipe) (+2 more)
 
 ### Community 9 - "🖐️ Modul Adaptive Unified Dual-Hand Bounding Box"
@@ -88,11 +89,17 @@ Nodes (3): 📌 Masalah yang Diselesaikan (*Visual Ambiguity*), ⚙️ Mekanisme
 Cohesion: 0.67
 Nodes (3): 🔄 Alur Pemrosesan Frame Real-Time, 🏗️ Arsitektur Pipeline Sistem Keseluruhan, ⚡ Estimasi Latensi Komputasi per Frame (CPU Laptop i7)
 
+### Community 12 - "📈 Laporan Pelatihan Model YOLOv11n BISINDO"
+Cohesion: 0.33
+Nodes (6): 📊 Analisis Metrik & Konvergensi Model (Epoch 1 – 8), 📸 Bukti Visual Eksekusi Pelatihan (Terminal Log), 📈 Laporan Pelatihan Model YOLOv11n BISINDO, 🎯 Lokasi Artefak Model Akhir, Poin-Poin Analisis Ilmiah untuk Laporan:, 🔬 Ringkasan Konfigurasi Eksperimen
+
 ## Knowledge Gaps
 - **1 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
+- **Why does `PROJECT MEMORY: BISINDO Hand Gesture Recognition (YOLOv11 + MediaPipe)` connect `PROJECT MEMORY: BISINDO Hand Gesture Recognition (YOLOv11 + MediaPipe)` to `00_Dashboard.md`?**
+  _High betweenness centrality (0.186) - this node is a cross-community bridge._
 - **Should `DOKUMEN PERENCANAAN MODIFIKASI PENELITIAN` be split into smaller, more focused modules?**
   _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._
