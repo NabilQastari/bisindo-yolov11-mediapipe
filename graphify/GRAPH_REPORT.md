@@ -1,16 +1,16 @@
 # Graph Report - brain  (2026-11-23)
 
 ## Corpus Check
-- 13 files · ~6,319 words
+- 13 files · ~6,555 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 101 nodes · 121 edges · 14 communities (13 shown, 1 thin omitted)
+- 106 nodes · 127 edges · 14 communities (13 shown, 1 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `745d8ae4`
+- Built from commit: `23618493`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -31,15 +31,15 @@
 
 ## God Nodes (most connected - your core abstractions)
 1. `DOKUMEN PERENCANAAN MODIFIKASI PENELITIAN` - 9 edges
-2. `PROJECT MEMORY: BISINDO Hand Gesture Recognition (YOLOv11 + MediaPipe)` - 7 edges
-3. `📹 Laporan Pengujian Real-Time Webcam Pipeline BISINDO` - 5 edges
-4. `📈 Laporan Pelatihan Model YOLOv11n BISINDO` - 5 edges
-5. `📖 Review Paper Acuan: Alsharif et al. (2025)` - 5 edges
-6. `DOKUMEN SARAN MODIFIKASI FITUR TAMBAHAN (BISINDO)` - 5 edges
-7. `🗂️ Sumber Dataset Terkurasi & Siap Pakai` - 5 edges
-8. `🚀 Dashboard Utama: Sistem Penerjemah BISINDO Real-Time` - 4 edges
-9. `📂 Struktur Modul Knowledge Base` - 4 edges
-10. `2. Inovasi & Modifikasi Ilmiah` - 4 edges
+2. `📈 Laporan Pelatihan Model YOLOv11n BISINDO` - 7 edges
+3. `PROJECT MEMORY: BISINDO Hand Gesture Recognition (YOLOv11 + MediaPipe)` - 7 edges
+4. `📸 Bukti Visual Eksekusi & Hasil Pelatihan` - 5 edges
+5. `📹 Laporan Pengujian Real-Time Webcam Pipeline BISINDO` - 5 edges
+6. `📖 Review Paper Acuan: Alsharif et al. (2025)` - 5 edges
+7. `DOKUMEN SARAN MODIFIKASI FITUR TAMBAHAN (BISINDO)` - 5 edges
+8. `🗂️ Sumber Dataset Terkurasi & Siap Pakai` - 5 edges
+9. `2. Inovasi & Modifikasi Ilmiah` - 4 edges
+10. `4. Rincian Teknis Tiga Modifikasi` - 4 edges
 
 ## Surprising Connections (you probably didn't know these)
 - None detected - all connections are within the same source files.
@@ -91,8 +91,8 @@ Cohesion: 0.67
 Nodes (3): 🔄 Alur Pemrosesan Frame Real-Time, 🏗️ Arsitektur Pipeline Sistem Keseluruhan, ⚡ Estimasi Latensi Komputasi per Frame (CPU Laptop i7)
 
 ### Community 12 - "📈 Laporan Pelatihan Model YOLOv11n BISINDO"
-Cohesion: 0.33
-Nodes (6): 📊 Analisis Metrik & Konvergensi Model (Epoch 1 – 8), 📸 Bukti Visual Eksekusi Pelatihan (Terminal Log), 📈 Laporan Pelatihan Model YOLOv11n BISINDO, 🎯 Lokasi Artefak Model Akhir, Poin-Poin Analisis Ilmiah untuk Laporan:, 🔬 Ringkasan Konfigurasi Eksperimen
+Cohesion: 0.18
+Nodes (11): 1. Terminal Selesai Pelatihan (Epoch 30 Selesai), 2. Kurva Pembelajaran & Konvergensi Loss (30 Epochs), 3. Matriks Konfusi Ternormalisasi (Confusion Matrix), 4. Kurva F1-Score Confidence, 💡 Analisis Ilmiah & Validasi Novelty Penelitian, 📸 Bukti Visual Eksekusi & Hasil Pelatihan, 🔤 Evaluasi Performa per Kelas Alfabet BISINDO, 📊 Hasil Evaluasi Akhir Model (Best Model Validation) (+3 more)
 
 ### Community 13 - "📹 Laporan Pengujian Real-Time Webcam Pipeline BISINDO"
 Cohesion: 0.29
@@ -104,7 +104,9 @@ Nodes (7): Analisis Hasil Pengujian 1:, Analisis Hasil Pengujian 2:, 🖼️ Buk
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `PROJECT MEMORY: BISINDO Hand Gesture Recognition (YOLOv11 + MediaPipe)` connect `PROJECT MEMORY: BISINDO Hand Gesture Recognition (YOLOv11 + MediaPipe)` to `00_Dashboard.md`?**
-  _High betweenness centrality (0.172) - this node is a cross-community bridge._
+- **Why does `📈 Laporan Pelatihan Model YOLOv11n BISINDO` connect `📈 Laporan Pelatihan Model YOLOv11n BISINDO` to `00_Dashboard.md`?**
+  _High betweenness centrality (0.180) - this node is a cross-community bridge._
 - **Should `DOKUMEN PERENCANAAN MODIFIKASI PENELITIAN` be split into smaller, more focused modules?**
   _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._
+- **Why does `PROJECT MEMORY: BISINDO Hand Gesture Recognition (YOLOv11 + MediaPipe)` connect `PROJECT MEMORY: BISINDO Hand Gesture Recognition (YOLOv11 + MediaPipe)` to `00_Dashboard.md`?**
+  _High betweenness centrality (0.164) - this node is a cross-community bridge._
