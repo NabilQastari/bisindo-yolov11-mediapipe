@@ -5,25 +5,33 @@ Runs transfer learning using the prepared BISINDO dataset.
 Optimized for CPU / AMD iGPU with batch size and workers tuned for responsiveness.
 """
 
+import sys
 import argparse
 from pathlib import Path
+
+# Ensure project root is in sys.path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from ultralytics import YOLO
 
 
 def train_yolov11(
-    data_yaml: str = r"E:\Semester 5\C&V\Project Citra\data\bisindo_yolo\data.yaml",
+    data_yaml: str = str(PROJECT_ROOT / "data" / "bisindo_yolo" / "data.yaml"),
     epochs: int = 30,
     batch_size: int = 8,
     img_size: int = 640,
     device: str = "cpu",
-    output_dir: str = r"E:\Semester 5\C&V\Project Citra\runs\train"
+    output_dir: str = str(PROJECT_ROOT / "runs" / "train")
 ):
     print("=== Training YOLOv11n for BISINDO ===")
     print(f"Data YAML: {data_yaml}")
     print(f"Epochs: {epochs} | Batch: {batch_size} | Image Size: {img_size} | Device: {device}")
 
-    # Load pre-trained YOLOv11n model
-    model = YOLO("yolo11n.pt")
+    # Base weights path on Drive E:
+    base_weights = PROJECT_ROOT / "weights" / "yolo11n.pt"
+    model = YOLO(str(base_weights) if base_weights.exists() else "yolo11n.pt")
 
     # Run training
     results = model.train(
