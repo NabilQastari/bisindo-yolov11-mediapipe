@@ -62,6 +62,7 @@ graph TD
 * [[BISINDO_Datasets_Catalog]] — Sumber dataset publik terverifikasi (Roboflow Universe, Mendeley Data, Kaggle).
 * [[Pipeline_Architecture]] — Alur kerja pemrosesan citra dari webcam hingga teks akhir.
 * [[Training_Report_YOLOv11n]] — Laporan eksperimen dan metrik pelatihan model YOLOv11n BISINDO.
+* [[Realtime_Testing_Report]] — Laporan pengujian webcam real-time (validasi single-hand dan dual-hand 42 keypoints).
 
 ---
 
