@@ -1,16 +1,16 @@
 # Graph Report - brain  (2026-11-23)
 
 ## Corpus Check
-- 12 files · ~5,814 words
+- 13 files · ~6,319 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 93 nodes · 110 edges · 13 communities (12 shown, 1 thin omitted)
+- 101 nodes · 121 edges · 14 communities (13 shown, 1 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `93484d87`
+- Built from commit: `745d8ae4`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -27,23 +27,24 @@
 - 📐 Modul Geometric Disambiguation
 - 🏗️ Arsitektur Pipeline Sistem Keseluruhan
 - 📈 Laporan Pelatihan Model YOLOv11n BISINDO
+- 📹 Laporan Pengujian Real-Time Webcam Pipeline BISINDO
 
 ## God Nodes (most connected - your core abstractions)
 1. `DOKUMEN PERENCANAAN MODIFIKASI PENELITIAN` - 9 edges
 2. `PROJECT MEMORY: BISINDO Hand Gesture Recognition (YOLOv11 + MediaPipe)` - 7 edges
-3. `📈 Laporan Pelatihan Model YOLOv11n BISINDO` - 5 edges
-4. `📖 Review Paper Acuan: Alsharif et al. (2025)` - 5 edges
-5. `DOKUMEN SARAN MODIFIKASI FITUR TAMBAHAN (BISINDO)` - 5 edges
-6. `🗂️ Sumber Dataset Terkurasi & Siap Pakai` - 5 edges
-7. `🚀 Dashboard Utama: Sistem Penerjemah BISINDO Real-Time` - 4 edges
-8. `📂 Struktur Modul Knowledge Base` - 4 edges
-9. `2. Inovasi & Modifikasi Ilmiah` - 4 edges
-10. `4. Rincian Teknis Tiga Modifikasi` - 4 edges
+3. `📹 Laporan Pengujian Real-Time Webcam Pipeline BISINDO` - 5 edges
+4. `📈 Laporan Pelatihan Model YOLOv11n BISINDO` - 5 edges
+5. `📖 Review Paper Acuan: Alsharif et al. (2025)` - 5 edges
+6. `DOKUMEN SARAN MODIFIKASI FITUR TAMBAHAN (BISINDO)` - 5 edges
+7. `🗂️ Sumber Dataset Terkurasi & Siap Pakai` - 5 edges
+8. `🚀 Dashboard Utama: Sistem Penerjemah BISINDO Real-Time` - 4 edges
+9. `📂 Struktur Modul Knowledge Base` - 4 edges
+10. `2. Inovasi & Modifikasi Ilmiah` - 4 edges
 
 ## Surprising Connections (you probably didn't know these)
 - None detected - all connections are within the same source files.
 
-## Communities (13 total, 1 thin omitted)
+## Communities (14 total, 1 thin omitted)
 
 ### Community 0 - "DOKUMEN PERENCANAAN MODIFIKASI PENELITIAN"
 Cohesion: 0.11
@@ -93,6 +94,10 @@ Nodes (3): 🔄 Alur Pemrosesan Frame Real-Time, 🏗️ Arsitektur Pipeline Sis
 Cohesion: 0.33
 Nodes (6): 📊 Analisis Metrik & Konvergensi Model (Epoch 1 – 8), 📸 Bukti Visual Eksekusi Pelatihan (Terminal Log), 📈 Laporan Pelatihan Model YOLOv11n BISINDO, 🎯 Lokasi Artefak Model Akhir, Poin-Poin Analisis Ilmiah untuk Laporan:, 🔬 Ringkasan Konfigurasi Eksperimen
 
+### Community 13 - "📹 Laporan Pengujian Real-Time Webcam Pipeline BISINDO"
+Cohesion: 0.29
+Nodes (7): Analisis Hasil Pengujian 1:, Analisis Hasil Pengujian 2:, 🖼️ Bukti Eksperimen 1: Pengujian Isyarat Satu Tangan (Single-Hand), 🖼️ Bukti Eksperimen 2: Pengujian Isyarat Dua Tangan Simultan (Dual-Hand 42 Keypoints), 📌 Kesimpulan & Relevansi untuk Laporan Akhir, 📹 Laporan Pengujian Real-Time Webcam Pipeline BISINDO, 🎯 Tujuan Pengujian
+
 ## Knowledge Gaps
 - **1 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -100,6 +105,6 @@ Nodes (6): 📊 Analisis Metrik & Konvergensi Model (Epoch 1 – 8), 📸 Bukti 
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `PROJECT MEMORY: BISINDO Hand Gesture Recognition (YOLOv11 + MediaPipe)` connect `PROJECT MEMORY: BISINDO Hand Gesture Recognition (YOLOv11 + MediaPipe)` to `00_Dashboard.md`?**
-  _High betweenness centrality (0.186) - this node is a cross-community bridge._
+  _High betweenness centrality (0.172) - this node is a cross-community bridge._
 - **Should `DOKUMEN PERENCANAAN MODIFIKASI PENELITIAN` be split into smaller, more focused modules?**
   _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._
