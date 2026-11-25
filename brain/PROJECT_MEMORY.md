@@ -105,6 +105,7 @@ E:\Semester 5\C&V\Project Citra\
 - [x] Implementasi kode modular `src/`:
   - `src/utils/box_utils.py`: Adaptive Dual-Hand Unified Bounding Box & 1:1 Square Unified ROI (`compute_square_unified_roi`, `crop_square_roi`).
   - `src/utils/geometry.py`: 3D joint angles, 174-dim Dual-Hand Feature Extractor (`extract_dual_hand_features`), & authentic BISINDO geometric disambiguation (`disambiguate_bisindo_pair` M vs N, B vs F).
+  - `src/utils/camera_gui.py`: GUI Tkinter pemilih kamera & sumber input (*live preview*, *Mirror toggle*, *Browse Video/Citra/Folder*).
   - `src/modules/velocity_filter.py`: Velocity-Aware Transition Filter (Anti-ghost recognition).
   - `src/modules/dual_hand_detector.py`: MediaPipe Tasks HandLandmarker 42 keypoints extractor.
   - `src/modules/landmark_classifier.py`: PyTorch 42-Keypoint Dual-Hand Landmark MLP (`LandmarkMLP` + `LandmarkClassifierWrapper`).

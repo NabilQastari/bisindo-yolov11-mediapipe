@@ -18,12 +18,14 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.modules.dual_hand_detector import DualHandDetector
 from src.utils.box_utils import compute_square_unified_roi, crop_square_roi
+from src.utils.camera_gui import launch_input_selector_gui
 
 
 def run_collector(
     camera_id: int = 0,
     output_dir: str = str(PROJECT_ROOT / "data" / "custom_bisindo"),
-    burst_count: int = 15
+    burst_count: int = 15,
+    initial_mirror: bool = False
 ):
     out_root = Path(output_dir)
     out_root.mkdir(parents=True, exist_ok=True)
@@ -44,7 +46,7 @@ def run_collector(
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
-    mirror = False
+    mirror = initial_mirror
     capturing_letter = None
     remaining = 0
     last_cap_time = 0.0
@@ -119,7 +121,23 @@ def run_collector(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="BISINDO Webcam Calibration Collector")
-    parser.add_argument("--cam", type=int, default=0, help="Webcam index (default 0)")
+    parser.add_argument("--cam", type=int, default=None, help="Webcam index (opens GUI if omitted)")
     parser.add_argument("--count", type=int, default=15, help="Frames per key press")
+    parser.add_argument("--mirror", action="store_true", help="Enable horizontal mirror flip")
     args = parser.parse_args()
-    run_collector(camera_id=args.cam, burst_count=args.count)
+
+    chosen_cam = args.cam
+    chosen_mirror = args.mirror
+    if chosen_cam is None:
+        gui_res = launch_input_selector_gui(
+            allow_files=False,
+            title="BISINDO Collector - Pilih Kamera Kalibrasi",
+            action_text="Mulai Rekam Kalibrasi"
+        )
+        if gui_res is None:
+            print("Pemilihan kamera dibatalkan.")
+            sys.exit(0)
+        chosen_cam = int(gui_res["source"])
+        chosen_mirror = chosen_mirror or gui_res["mirror"]
+
+    run_collector(camera_id=chosen_cam, burst_count=args.count, initial_mirror=chosen_mirror)

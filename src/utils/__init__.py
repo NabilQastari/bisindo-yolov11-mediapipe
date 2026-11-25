@@ -19,6 +19,7 @@ from .geometry import (
     extract_dual_hand_features,
     disambiguate_bisindo_pair
 )
+from .camera_gui import probe_cameras, launch_input_selector_gui
 
 __all__ = [
     "calculate_wrist_distance",
@@ -34,5 +35,7 @@ __all__ = [
     "is_finger_extended",
     "count_extended_fingers",
     "extract_dual_hand_features",
-    "disambiguate_bisindo_pair"
+    "disambiguate_bisindo_pair",
+    "probe_cameras",
+    "launch_input_selector_gui"
 ]

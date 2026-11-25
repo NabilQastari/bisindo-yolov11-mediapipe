@@ -33,6 +33,7 @@ from src.modules.velocity_filter import VelocityAwareFilter, TransitionState
 from src.modules.landmark_classifier import LandmarkClassifierWrapper
 from src.utils.box_utils import compute_square_unified_roi, crop_square_roi
 from src.utils.geometry import disambiguate_bisindo_pair
+from src.utils.camera_gui import launch_input_selector_gui
 
 BISINDO_CLASSES = [chr(i) for i in range(ord('A'), ord('Z') + 1)]
 
@@ -470,11 +471,27 @@ if __name__ == "__main__":
     parser.add_argument("--source", type=str, default=None, help="Input source: webcam index (0, 1), video file path, or image directory")
     parser.add_argument("--model", type=str, default=None, help="Path to trained YOLOv11 .pt model")
     parser.add_argument("--landmark-model", type=str, default=None, help="Path to trained Landmark MLP .pt model")
+    parser.add_argument("--mirror", action="store_true", help="Enable horizontal mirror flip for webcam")
+    parser.add_argument("--cli", action="store_true", help="Use text CLI menu instead of GUI selector")
     args = parser.parse_args()
 
     chosen_source = args.source
+    initial_mirror = args.mirror
+
     if chosen_source is None:
-        chosen_source = interactive_select_source()
+        if args.cli:
+            chosen_source = interactive_select_source()
+        else:
+            gui_res = launch_input_selector_gui(
+                allow_files=True,
+                title="BISINDO Translator - Pilih Input Kamera & Sumber",
+                action_text="Mulai Penerjemah BISINDO"
+            )
+            if gui_res is None:
+                print("Pemilihan input dibatalkan oleh pengguna.")
+                sys.exit(0)
+            chosen_source = gui_res["source"]
+            initial_mirror = initial_mirror or gui_res["mirror"]
     elif chosen_source.isdigit():
         chosen_source = int(chosen_source)
 
@@ -486,4 +503,5 @@ if __name__ == "__main__":
         landmark_weights_path=args.landmark_model,
         static_image_mode=is_static
     )
+    pipeline.mirror_mode = initial_mirror
     pipeline.run(source=chosen_source)
