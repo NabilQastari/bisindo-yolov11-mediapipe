@@ -39,6 +39,8 @@ weights/
 # Datasets (File citra raw berukuran GB)
 data/raw/
 data/bisindo_yolo/images/
+data/bisindo_cls/
+data/custom_bisindo/
 datasets/
 runs/
 *.zip

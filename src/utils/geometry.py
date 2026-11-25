@@ -2,7 +2,7 @@
 geometry.py: 3D Joint Angle Calculations and Geometric Disambiguation for BISINDO.
 """
 
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 import numpy as np
 
 
@@ -132,60 +132,135 @@ def count_extended_fingers(landmarks: List[Tuple[float, float, float]]) -> Dict[
     return {'extended': extended, 'total': total_count, 'angles': angles}
 
 
-def classify_gesture_landmarks(landmarks: List[Tuple[float, float, float]]) -> Dict[str, any]:
+LANDMARK_FEATURE_DIM = 174
+_FINGERTIP_INDICES = (4, 8, 12, 16, 20)
+
+
+def _single_hand_features(landmarks: Optional[List[Tuple[float, float, float]]]) -> np.ndarray:
     """
-    Classifies fundamental sign language alphabet poses based on 3D landmark geometry.
-    Complements YOLOv11 by providing invariant geometric pose verification.
+    Extracts an 83-dim wrist-relative, palm-scale-normalized feature vector
+    for a single hand (21 landmarks). Returns zeros if hand is absent.
     """
     if not landmarks or len(landmarks) < 21:
-        return {'letter': '-', 'confidence': 0.0, 'note': 'Landmark tidak lengkap'}
+        return np.zeros(83, dtype=np.float32)
 
-    analysis = count_extended_fingers(landmarks)
-    ext = analysis['extended']
-    total = analysis['total']
+    pts = np.asarray(landmarks, dtype=np.float32)
+    rel = pts - pts[0:1]
+    palm_scale = max(float(np.linalg.norm(rel[9])), 1e-4)
+    norm_pts = np.clip(rel / palm_scale, -4.0, 4.0).reshape(-1)  # 63 floats
 
-    # 1. 5 Fingers Open - Not an alphabet
-    if total == 5:
-        return {'letter': '-', 'confidence': 0.95, 'note': 'Tangan Terbuka (5 Jari) - Bukan Huruf'}
+    angles = get_finger_flexion_angles(landmarks)
+    angle_vec = np.array([
+        angles['thumb']['mcp'], angles['thumb']['ip'],
+        angles['index']['mcp'], angles['index']['pip'], angles['index']['dip'],
+        angles['middle']['mcp'], angles['middle']['pip'], angles['middle']['dip'],
+        angles['ring']['mcp'], angles['ring']['pip'], angles['ring']['dip'],
+        angles['pinky']['mcp'], angles['pinky']['pip'], angles['pinky']['dip'],
+    ], dtype=np.float32) / 180.0  # 14 floats
 
-    # 2. Letter L: Thumb + Index extended
-    if ext['thumb'] and ext['index'] and not ext['middle'] and not ext['ring'] and not ext['pinky']:
-        return {'letter': 'L', 'confidence': 0.95, 'note': 'Pose Huruf L (Ibu Jari + Telunjuk)'}
+    tip_dists = np.array([
+        min(float(np.linalg.norm(rel[idx])) / (palm_scale * 4.0), 1.5)
+        for idx in _FINGERTIP_INDICES
+    ], dtype=np.float32)  # 5 floats
 
-    # 3. Letter V: Index + Middle extended
-    if ext['index'] and ext['middle'] and not ext['ring'] and not ext['pinky'] and not ext['thumb']:
-        return {'letter': 'V', 'confidence': 0.95, 'note': 'Pose Huruf V (Telunjuk + Tengah)'}
+    presence = np.array([1.0], dtype=np.float32)  # 1 float
+    return np.concatenate([norm_pts, angle_vec, tip_dists, presence])
 
-    # 4. Letter W: Index + Middle + Ring extended
-    if ext['index'] and ext['middle'] and ext['ring'] and not ext['pinky'] and not ext['thumb']:
-        return {'letter': 'W', 'confidence': 0.92, 'note': 'Pose Huruf W (3 Jari Tegak)'}
 
-    # 5. Letter I: Only pinky extended
-    if ext['pinky'] and not ext['index'] and not ext['middle'] and not ext['ring'] and not ext['thumb']:
-        return {'letter': 'I', 'confidence': 0.95, 'note': 'Pose Huruf I (Kelingking Tegak)'}
+def extract_dual_hand_features(
+    landmarks_left: Optional[List[Tuple[float, float, float]]],
+    landmarks_right: Optional[List[Tuple[float, float, float]]]
+) -> np.ndarray:
+    """
+    Extracts a 174-dim dual-hand geometric feature vector:
+    - 83 dims for left hand
+    - 83 dims for right hand
+    - 8 dims for inter-hand spatial relationships
+    """
+    feat_l = _single_hand_features(landmarks_left)
+    feat_r = _single_hand_features(landmarks_right)
 
-    # 6. Letter Y: Thumb + Pinky extended (shaka sign)
-    if ext['thumb'] and ext['pinky'] and not ext['index'] and not ext['middle'] and not ext['ring']:
-        return {'letter': 'Y', 'confidence': 0.95, 'note': 'Pose Huruf Y (Ibu Jari + Kelingking)'}
+    if landmarks_left and len(landmarks_left) >= 21 and landmarks_right and len(landmarks_right) >= 21:
+        pts_l = np.asarray(landmarks_left, dtype=np.float32)
+        pts_r = np.asarray(landmarks_right, dtype=np.float32)
+        scale_l = max(float(np.linalg.norm(pts_l[9] - pts_l[0])), 1e-4)
+        scale_r = max(float(np.linalg.norm(pts_r[9] - pts_r[0])), 1e-4)
+        avg_scale = 0.5 * (scale_l + scale_r)
 
-    # 7. Letter B: 4 fingers extended, thumb folded
-    if ext['index'] and ext['middle'] and ext['ring'] and ext['pinky'] and not ext['thumb']:
-        return {'letter': 'B', 'confidence': 0.92, 'note': 'Pose Huruf B (4 Jari Rapat Tegak)'}
+        rel_wrist = np.clip((pts_r[0] - pts_l[0]) / avg_scale, -6.0, 6.0) / 6.0
+        wrist_dist = min(float(np.linalg.norm(pts_r[0] - pts_l[0])) / avg_scale, 6.0) / 6.0
 
-    # 8. Letter D: Index extended, others touching/folded
-    if ext['index'] and not ext['middle'] and not ext['ring'] and not ext['pinky']:
-        return {'letter': 'D', 'confidence': 0.90, 'note': 'Pose Huruf D (Telunjuk Tegak)'}
+        tips_l = pts_l[list(_FINGERTIP_INDICES)]
+        tips_r = pts_r[list(_FINGERTIP_INDICES)]
+        pairwise = np.linalg.norm(tips_l[:, None, :] - tips_r[None, :, :], axis=-1)
+        min_tip_dist = min(float(np.min(pairwise)) / avg_scale, 6.0) / 6.0
 
-    # 9. Letter A / S / E / M / N (All fingers folded into fist)
-    if total == 0:
-        return {'letter': 'A', 'confidence': 0.85, 'note': 'Pose Kepalan Tangan (A/S)'}
+        index_tip_dist = min(float(np.linalg.norm(pts_l[8] - pts_r[8])) / avg_scale, 6.0) / 6.0
+        thumb_tip_dist = min(float(np.linalg.norm(pts_l[4] - pts_r[4])) / avg_scale, 6.0) / 6.0
 
-    # 10. Letter C: Check curvature between thumb tip and index tip
-    thumb_tip = np.array(landmarks[4])
-    index_tip = np.array(landmarks[8])
-    tip_dist = np.linalg.norm(thumb_tip - index_tip)
-    if 0.08 < tip_dist < 0.22 and not ext['pinky']:
-        return {'letter': 'C', 'confidence': 0.80, 'note': 'Pose Huruf C (Lengkung Telapak)'}
+        inter = np.array([
+            rel_wrist[0], rel_wrist[1], rel_wrist[2],
+            wrist_dist, min_tip_dist, index_tip_dist, thumb_tip_dist, 1.0
+        ], dtype=np.float32)
+    else:
+        inter = np.zeros(8, dtype=np.float32)
 
-    return {'letter': '-', 'confidence': 0.0, 'note': 'Mencari kecocokan alfabet...'}
+    return np.concatenate([feat_l, feat_r, inter])
+
+
+def disambiguate_bisindo_pair(
+    probs: Dict[str, float],
+    landmarks_left: Optional[List[Tuple[float, float, float]]],
+    landmarks_right: Optional[List[Tuple[float, float, float]]],
+    margin_threshold: float = 0.25
+) -> Tuple[str, float, Optional[str]]:
+    """
+    Authentic 2-hand BISINDO geometric disambiguation for visually ambiguous pairs
+    (M vs N and B vs F) when top-2 probabilities are close.
+    """
+    ranked = sorted(probs.items(), key=lambda kv: kv[1], reverse=True)
+    if not ranked:
+        return "-", 0.0, None
+
+    c1, p1 = ranked[0]
+    if len(ranked) < 2:
+        return c1, float(p1), None
+
+    c2, p2 = ranked[1]
+    if not (landmarks_left and landmarks_right) or (p1 - p2) >= margin_threshold:
+        return c1, float(p1), None
+
+    pair = {c1, c2}
+    info_l = count_extended_fingers(landmarks_left)
+    info_r = count_extended_fingers(landmarks_right)
+
+    if pair == {'M', 'N'}:
+        # Base hand is open palm (>= 4 extended fingers); active hand places 3 (M) or 2 (N) fingers
+        if info_l['total'] >= info_r['total']:
+            base_info, active_info = info_l, info_r
+        else:
+            base_info, active_info = info_r, info_l
+
+        if base_info['total'] >= 4:
+            ext = active_info['extended']
+            if ext['ring']:
+                return 'M', float(max(p1, p2)), 'GeoDisambig: 3 jari pada telapak -> M'
+            if ext['index'] and ext['middle'] and not ext['ring']:
+                return 'N', float(max(p1, p2)), 'GeoDisambig: 2 jari pada telapak -> N'
+
+    elif pair == {'B', 'F'}:
+        # One hand holds 1 vertical index finger; other hand places 3 (B) or 2 (F) horizontal fingers
+        if info_l['total'] <= info_r['total']:
+            vert_info, horiz_info = info_l, info_r
+        else:
+            vert_info, horiz_info = info_r, info_l
+
+        if vert_info['total'] <= 2:
+            ext = horiz_info['extended']
+            if ext['ring']:
+                return 'B', float(max(p1, p2)), 'GeoDisambig: 3 jari horizontal -> B'
+            if ext['index'] and ext['middle'] and not ext['ring']:
+                return 'F', float(max(p1, p2)), 'GeoDisambig: 2 jari horizontal -> F'
+
+    return c1, float(p1), None
 

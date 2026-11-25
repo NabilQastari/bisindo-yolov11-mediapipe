@@ -1,5 +1,5 @@
 """
-pipeline.py: Multi-Source Real-Time BISINDO Recognition Pipeline.
+pipeline.py: Multi-Source Real-Time BISINDO Hybrid Ensemble Pipeline.
 
 Supports multiple input sources:
 - Live Webcam (auto-detection of available camera indices)
@@ -9,30 +9,32 @@ Supports multiple input sources:
 Integrates:
 1. MediaPipe Tasks HandLandmarker (42 Keypoints)
 2. Velocity-Aware Transition Filter (Anti-Ghost Recognition)
-3. Adaptive Dual-Hand Unified Bounding Box
-4. YOLOv11 Inference Head (optional)
-5. 3D Joint Angle Geometric Disambiguation (M vs N, etc.)
+3. Adaptive 1:1 Square Unified Dual-Hand ROI (Zero-distortion & clean crop)
+4. Hybrid Ensemble: YOLOv11n-cls (0.60) + 42-Keypoint Landmark MLP (0.40)
+5. Temporal Probability Smoothing + Authentic BISINDO Geometric Disambiguation
 """
 
 import sys
 import os
 import time
 import argparse
+from collections import deque
 from pathlib import Path
+from typing import Optional, List, Union, Dict
+import cv2
+import numpy as np
 
-# Ensure project root directory is in sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from typing import Optional, List, Union
-import cv2
-import numpy as np
-
-from src.modules.dual_hand_detector import DualHandDetector, HandDetectionResult
+from src.modules.dual_hand_detector import DualHandDetector
 from src.modules.velocity_filter import VelocityAwareFilter, TransitionState
-from src.utils.box_utils import compute_dual_hand_unified_bbox
-from src.utils.geometry import count_extended_fingers, classify_gesture_landmarks
+from src.modules.landmark_classifier import LandmarkClassifierWrapper
+from src.utils.box_utils import compute_square_unified_roi, crop_square_roi
+from src.utils.geometry import disambiguate_bisindo_pair
+
+BISINDO_CLASSES = [chr(i) for i in range(ord('A'), ord('Z') + 1)]
 
 
 def scan_available_cameras(max_to_test: int = 4) -> List[int]:
@@ -72,22 +74,19 @@ def interactive_select_source() -> Union[int, str]:
             print(f"Kamera terdeteksi pada indeks: {cameras}")
             cam_idx = input(f"Ketik indeks kamera yang ingin digunakan ({cameras}): ").strip()
             try:
-                val = int(cam_idx)
-                return val
+                return int(cam_idx)
             except ValueError:
                 return cameras[0]
         elif choice == "3":
             path = input("Masukkan path lengkap file video (contoh: E:\\...\\video.mp4): ").strip().strip('"')
             if os.path.exists(path):
                 return path
-            else:
-                print(f"File tidak ditemukan: {path}. Silakan coba lagi.")
+            print(f"File tidak ditemukan: {path}. Silakan coba lagi.")
         elif choice == "4":
             path = input("Masukkan path file citra atau folder citra: ").strip().strip('"')
             if os.path.exists(path):
                 return path
-            else:
-                print(f"Path tidak ditemukan: {path}. Silakan coba lagi.")
+            print(f"Path tidak ditemukan: {path}. Silakan coba lagi.")
         else:
             print("Pilihan tidak valid. Silakan ketik angka 1, 2, 3, atau 4.")
 
@@ -96,174 +95,246 @@ class BisindoPipeline:
     def __init__(
         self,
         yolo_model_path: Optional[str] = None,
+        landmark_weights_path: Optional[str] = None,
         velocity_threshold: float = 0.40,
-        stability_min_frames: int = 3
+        stability_min_frames: int = 3,
+        static_image_mode: bool = False
     ):
-        print("\n[Inisialisasi Pipeline BISINDO]")
-        # 1. MediaPipe Tracker
+        print("\n[Inisialisasi Pipeline BISINDO Hybrid Ensemble]")
         self.detector = DualHandDetector(
-            static_image_mode=False,
+            static_image_mode=static_image_mode,
             max_num_hands=2,
-            min_detection_confidence=0.35,
-            min_tracking_confidence=0.35
+            min_detection_confidence=0.25,
+            min_presence_confidence=0.25,
+            min_tracking_confidence=0.25
         )
 
-        # 2. Velocity-Aware Filter
         self.velocity_filter = VelocityAwareFilter(
             velocity_threshold=velocity_threshold,
             stability_min_frames=stability_min_frames,
             smoothing_alpha=0.65
         )
 
-        # 3. YOLOv11 Model (Auto-detect trained weights if not explicitly specified)
+        # Load YOLOv11n-cls (preferred) or fallback to legacy detection weights
         self.yolo_model = None
-        if not yolo_model_path:
-            default_weights = PROJECT_ROOT / "weights" / "bisindo_yolov11n_best.pt"
-            if default_weights.exists():
-                yolo_model_path = str(default_weights)
+        self.is_cls_model = False
+        chosen_yolo = yolo_model_path
+        if not chosen_yolo:
+            cls_default = PROJECT_ROOT / "weights" / "bisindo_yolov11n_cls_best.pt"
+            det_default = PROJECT_ROOT / "weights" / "bisindo_yolov11n_best.pt"
+            if cls_default.exists():
+                chosen_yolo = str(cls_default)
+            elif det_default.exists():
+                chosen_yolo = str(det_default)
 
-        if yolo_model_path and Path(yolo_model_path).exists():
+        if chosen_yolo and Path(chosen_yolo).exists():
             from ultralytics import YOLO
-            print(f"Memuat bobot YOLOv11 dari {yolo_model_path}...")
-            self.yolo_model = YOLO(yolo_model_path)
-            print("Model YOLOv11 siap digunakan.")
+            print(f"Memuat bobot YOLOv11 dari {chosen_yolo}...")
+            self.yolo_model = YOLO(chosen_yolo)
+            self.is_cls_model = (getattr(self.yolo_model, "task", "") == "classify")
+            mode_lbl = "Classification (YOLOv11n-cls)" if self.is_cls_model else "Detection (YOLOv11n)"
+            print(f"Model YOLOv11 siap digunakan [{mode_lbl}].")
         else:
-            print("Berjalan dalam mode Preview Landmark & Filter Kecepatan (bobot YOLO belum diinput/dilatih).")
+            print("PERINGATAN: Bobot YOLOv11 belum ditemukan.")
 
+        # Load 42-keypoint Landmark MLP
+        self.landmark_clf: Optional[LandmarkClassifierWrapper] = None
+        lm_path = Path(landmark_weights_path) if landmark_weights_path else LandmarkClassifierWrapper.DEFAULT_WEIGHTS
+        if lm_path.exists():
+            print(f"Memuat bobot Landmark MLP dari {lm_path}...")
+            self.landmark_clf = LandmarkClassifierWrapper(str(lm_path))
+            print("Model 42-Keypoint Landmark MLP siap digunakan.")
+        else:
+            print("PERINGATAN: Bobot Landmark MLP belum ditemukan.")
+
+        self.prob_buffer: deque = deque(maxlen=5)
+        self.mirror_mode: bool = False
         self.recognized_letters: List[str] = []
         self.last_stable_letter: str = ""
         self.stable_letter_frames: int = 0
 
-    def disambiguate_letter(self, letter: str, landmarks: List) -> str:
-        """Disambiguation using 3D joint angles for confusing pairs."""
-        if not landmarks:
-            return letter
+    def _predict_yolo_probs(self, clean_frame: np.ndarray, roi_sq: np.ndarray) -> Optional[np.ndarray]:
+        """Returns 26-class probability vector ordered A..Z from YOLO model."""
+        if self.yolo_model is None:
+            return None
 
-        analysis = count_extended_fingers(landmarks)
-        ext = analysis['extended']
+        probs_vec = np.zeros(len(BISINDO_CLASSES), dtype=np.float32)
+        cls_to_idx = {c: i for i, c in enumerate(BISINDO_CLASSES)}
 
-        if letter in ['M', 'N']:
-            if ext['ring']:
-                return 'M'
-            else:
-                return 'N'
+        if self.is_cls_model:
+            res = self.yolo_model.predict(roi_sq, imgsz=224, verbose=False)
+            raw_probs = res[0].probs.data.cpu().numpy()
+            names = self.yolo_model.names
+            for k, name in names.items():
+                if name in cls_to_idx:
+                    probs_vec[cls_to_idx[name]] = float(raw_probs[int(k)])
+            return probs_vec
 
-        return letter
+        # Fallback if legacy detection weights are passed
+        res = self.yolo_model.predict(clean_frame, verbose=False, conf=0.20)
+        if len(res[0].boxes) > 0:
+            for b in res[0].boxes:
+                name = self.yolo_model.names[int(b.cls[0])]
+                c = float(b.conf[0])
+                if name in cls_to_idx:
+                    probs_vec[cls_to_idx[name]] = max(probs_vec[cls_to_idx[name]], c)
+            s = float(probs_vec.sum())
+            if s > 0:
+                probs_vec /= s
+                return probs_vec
+        return None
 
     def process_and_annotate_frame(
         self,
         frame: np.ndarray,
         fps: float,
-        source_label: str = ""
+        source_label: str = "",
+        bypass_velocity_filter: bool = False
     ) -> np.ndarray:
-        h, w, _ = frame.shape
+        """
+        Processes a clean frame through MediaPipe, Velocity Filter, Square Unified ROI,
+        and Hybrid Ensemble (YOLOv11n-cls + Landmark MLP) and renders HUD on a separate copy.
+        """
+        clean_frame = frame.copy()
+        h, w = clean_frame.shape[:2]
 
-        # 1. MediaPipe 42 keypoints
-        res = self.detector.process_frame(frame)
+        # 1. MediaPipe 42 Keypoints on clean frame
+        res = self.detector.process_frame(clean_frame)
 
         # 2. Velocity Filter
-        vel_res = self.velocity_filter.update(res.wrist_left, res.wrist_right)
-        state = vel_res['state']
-        is_stable = vel_res['is_stable']
-        speed = vel_res['max_speed']
+        if bypass_velocity_filter:
+            has_hand = (res.has_left or res.has_right)
+            state = TransitionState.STABLE if has_hand else TransitionState.ABSENT
+            is_stable = has_hand
+            speed = 0.0
+        else:
+            vel_res = self.velocity_filter.update(res.wrist_left, res.wrist_right)
+            state = vel_res['state']
+            is_stable = vel_res['is_stable']
+            speed = vel_res['max_speed']
 
-        # 3. Adaptive Bounding Box
-        bbox_dict = compute_dual_hand_unified_bbox(
-            landmarks_left=res.landmarks_left,
-            landmarks_right=res.landmarks_right,
-            img_w=w,
-            img_h=h,
-            padding_ratio=0.15,
-            interaction_threshold=0.45
+        # 3. 1:1 Square Unified ROI
+        roi_info = compute_square_unified_roi(
+            res.landmarks_left, res.landmarks_right, w, h,
+            padding_ratio=0.35, interaction_threshold=0.75
         )
 
+        # Draw landmarks ONLY on annotated copy
+        annotated = self.detector.draw_landmarks(clean_frame, res)
+
         active_pred = "-"
-        status_note = ""
-        conf = 0.0
+        top3_str = "-"
+        disambig_note: Optional[str] = None
+        roi_sq_preview: Optional[np.ndarray] = None
 
-        if is_stable and bbox_dict['boxes']:
-            for box in bbox_dict['boxes']:
-                xmin, ymin, xmax, ymax = box
-                cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
+        if is_stable and roi_info['square_box'] is not None:
+            for box in roi_info['boxes']:
+                cv2.rectangle(annotated, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
 
-            primary_lms = res.landmarks_right or res.landmarks_left
+            # Crop exact clean square ROI (zero drawings inside!)
+            roi_sq = crop_square_roi(clean_frame, roi_info['square_box'], out_size=224)
+            roi_sq_preview = roi_sq
 
-            # 1. Geometric Landmark Analysis (Lighting & Subject Invariant)
-            geo_res = classify_gesture_landmarks(primary_lms)
-            geo_letter = geo_res['letter']
-            status_note = geo_res.get('note', '')
+            p_yolo = self._predict_yolo_probs(clean_frame, roi_sq)
+            p_lm = self.landmark_clf.predict_proba(res.landmarks_left, res.landmarks_right) if self.landmark_clf else None
 
-            # 2. YOLOv11 Prediction (Predict on full frame for proper spatial context)
-            yolo_letter = "-"
-            yolo_conf = 0.0
-            if self.yolo_model is not None:
-                yolo_preds = self.yolo_model.predict(frame, verbose=False, conf=0.30)
-                if len(yolo_preds[0].boxes) > 0:
-                    best = yolo_preds[0].boxes[0]
-                    yolo_letter = self.yolo_model.names[int(best.cls[0])]
-                    yolo_conf = float(best.conf[0])
-
-            # 3. Hybrid Fusion Logic
-            if geo_letter != "-":
-                active_pred = geo_letter
-                conf = geo_res['confidence']
-            elif yolo_letter != "-":
-                active_pred = self.disambiguate_letter(yolo_letter, primary_lms)
-                conf = yolo_conf
-            elif status_note:
-                active_pred = status_note
+            if p_yolo is not None and p_lm is not None:
+                p_fused = 0.60 * p_yolo + 0.40 * p_lm
+            elif p_yolo is not None:
+                p_fused = p_yolo
+            elif p_lm is not None:
+                p_fused = p_lm
             else:
-                active_pred = "MENYESUAIKAN POSE..."
+                p_fused = None
 
-            # Letter commit logic (must remain stable for 8 frames to append)
-            valid_letters = [chr(i) for i in range(ord('A'), ord('Z') + 1)]
-            if active_pred in valid_letters:
-                if active_pred == self.last_stable_letter:
-                    self.stable_letter_frames += 1
-                    if self.stable_letter_frames == 8:
-                        self.recognized_letters.append(active_pred)
+            if p_fused is not None:
+                self.prob_buffer.append(p_fused)
+                p_smooth = np.mean(self.prob_buffer, axis=0)
+                prob_dict: Dict[str, float] = {BISINDO_CLASSES[i]: float(p_smooth[i]) for i in range(len(BISINDO_CLASSES))}
+
+                final_letter, final_conf, disambig_note = disambiguate_bisindo_pair(
+                    prob_dict, res.landmarks_left, res.landmarks_right
+                )
+
+                top3 = sorted(prob_dict.items(), key=lambda kv: kv[1], reverse=True)[:3]
+                top3_str = " | ".join(f"{c}:{p*100:.0f}%" for c, p in top3)
+
+                if final_conf >= 0.35:
+                    active_pred = f"{final_letter} ({final_conf*100:.0f}%)"
+                    if final_letter == self.last_stable_letter:
+                        self.stable_letter_frames += 1
+                        if self.stable_letter_frames == 8:
+                            self.recognized_letters.append(final_letter)
+                    else:
+                        self.last_stable_letter = final_letter
+                        self.stable_letter_frames = 1
                 else:
-                    self.last_stable_letter = active_pred
-                    self.stable_letter_frames = 1
+                    active_pred = f"Kurang Jelas ({final_letter} {final_conf*100:.0f}%)"
+            else:
+                active_pred = "SIAP (Model Belum Dimuat)"
+
         elif state == TransitionState.TRANSITION:
-            if bbox_dict['boxes']:
-                for box in bbox_dict['boxes']:
-                    cv2.rectangle(frame, (box[0], box[1]), (box[2], box[3]), (0, 165, 255), 1)
+            self.prob_buffer.clear()
+            for box in roi_info['boxes']:
+                cv2.rectangle(annotated, (box[0], box[1]), (box[2], box[3]), (0, 165, 255), 1)
             active_pred = "TRANSISI..."
         else:
+            self.prob_buffer.clear()
             active_pred = "MENUNGGU TANGAN"
 
-        # 4. Visual Rendering
-        annotated = self.detector.draw_landmarks(frame, res)
-
-        # Header Info Bar
+        # 4. Header Bar
         cv2.rectangle(annotated, (0, 0), (w, 65), (25, 25, 25), -1)
+        mirror_lbl = " [MIRROR]" if self.mirror_mode else ""
         cv2.putText(
-            annotated, f"BISINDO (MediaPipe + YOLOv11) | {source_label}",
-            (15, 26), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2
+            annotated, f"BISINDO Hybrid (YOLOv11-cls + Landmark MLP) | {source_label}{mirror_lbl}",
+            (15, 26), cv2.FONT_HERSHEY_SIMPLEX, 0.58, (255, 255, 255), 2
         )
         cv2.putText(
             annotated, f"FPS: {fps:.1f}",
             (w - 130, 26), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 0), 2
         )
 
-        state_color = (0, 255, 0) if is_stable else ((0, 165, 255) if state == TransitionState.TRANSITION else (128, 128, 128))
+        state_color = (0, 255, 0) if is_stable else ((0, 165, 255) if state == TransitionState.TRANSITION else (160, 160, 160))
         cv2.putText(
-            annotated, f"Status: {state.value} (Speed: {speed:.2f}) | Dual-Box Mode: {bbox_dict['mode']}",
-            (15, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.50, state_color, 1
+            annotated, f"Status: {state.value} (Speed: {speed:.2f}) | ROI Mode: {roi_info['mode']}",
+            (15, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.48, state_color, 1
         )
 
-        # Bottom Sentence Box
-        cv2.rectangle(annotated, (15, h - 90), (w - 15, h - 15), (20, 20, 20), -1)
-        cv2.rectangle(annotated, (15, h - 90), (w - 15, h - 15), (70, 70, 70), 1)
+        # 5. Picture-in-Picture Model ROI Preview (Top-Right below header)
+        if roi_sq_preview is not None and w >= 320 and h >= 260:
+            pip_size = 140
+            pip = cv2.resize(roi_sq_preview, (pip_size, pip_size), interpolation=cv2.INTER_AREA)
+            px2, py1 = w - 15, 75
+            px1, py2 = px2 - pip_size, py1 + pip_size
+            annotated[py1:py2, px1:px2] = pip
+            cv2.rectangle(annotated, (px1, py1), (px2, py2), (0, 255, 0), 2)
+            cv2.rectangle(annotated, (px1, py2), (px2, py2 + 20), (25, 25, 25), -1)
+            cv2.putText(annotated, "Model ROI", (px1 + 26, py2 + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 255, 0), 1)
+
+        # 6. Bottom HUD Sentence & Top-3 Box
+        hud_top = max(70, h - 108)
+        cv2.rectangle(annotated, (15, hud_top), (w - 15, h - 12), (20, 20, 20), -1)
+        cv2.rectangle(annotated, (15, hud_top), (w - 15, h - 12), (80, 80, 80), 1)
+
+        pred_line = f"Prediksi: {active_pred}"
+        if disambig_note:
+            pred_line += f"  [{disambig_note}]"
         cv2.putText(
-            annotated, f"Prediksi Huruf: {active_pred}",
-            (30, h - 55), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 255), 2
+            annotated, pred_line,
+            (28, hud_top + 28), cv2.FONT_HERSHEY_SIMPLEX, 0.68, (0, 255, 255), 2
         )
-        sentence = "".join(self.recognized_letters[-25:])
         cv2.putText(
-            annotated, f"Kalimat Terangkai: {sentence}",
-            (30, h - 28), cv2.FONT_HERSHEY_SIMPLEX, 0.60, (255, 255, 255), 1
+            annotated, f"Top-3: {top3_str}",
+            (28, hud_top + 52), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (200, 200, 200), 1
+        )
+        sentence = "".join(self.recognized_letters[-28:])
+        cv2.putText(
+            annotated, f"Kalimat: {sentence}",
+            (28, hud_top + 76), cv2.FONT_HERSHEY_SIMPLEX, 0.58, (255, 255, 255), 1
+        )
+        cv2.putText(
+            annotated, "[q] Keluar | [m] Mirror | [Spasi] Spasi/Jeda | [b] Hapus 1 | [c] Clear | [s] Foto",
+            (28, hud_top + 93), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (150, 150, 150), 1
         )
 
         return annotated
@@ -271,14 +342,13 @@ class BisindoPipeline:
     def run(self, source: Union[int, str]):
         """Runs the pipeline on the specified source."""
         is_image = False
-        image_files = []
+        image_files: List[Path] = []
         image_idx = 0
 
-        # Check if source is image or folder
         if isinstance(source, str):
             p = Path(source)
             if p.is_dir():
-                image_files = [f for f in p.iterdir() if f.suffix.lower() in ['.jpg', '.jpeg', '.png', '.bmp']]
+                image_files = sorted([f for f in p.iterdir() if f.suffix.lower() in ['.jpg', '.jpeg', '.png', '.bmp']])
                 if not image_files:
                     print(f"Tidak ada file citra di {source}")
                     return
@@ -289,7 +359,7 @@ class BisindoPipeline:
 
         if is_image:
             print(f"\nMenjalankan mode Gambar ({len(image_files)} gambar ditemukan).")
-            print("Kontrol: [n] Gambar Berikutnya | [p] Gambar Sebelumnya | [s] Simpan | [q] Keluar\n")
+            print("Kontrol: [n] Berikutnya | [p] Sebelumnya | [s] Simpan | [q] Keluar\n")
             while True:
                 cur_img_path = image_files[image_idx]
                 frame = cv2.imread(str(cur_img_path))
@@ -297,8 +367,11 @@ class BisindoPipeline:
                     image_idx = (image_idx + 1) % len(image_files)
                     continue
 
+                self.prob_buffer.clear()
                 source_lbl = f"Citra {image_idx + 1}/{len(image_files)}: {cur_img_path.name}"
-                annotated = self.process_and_annotate_frame(frame, fps=0.0, source_label=source_lbl)
+                annotated = self.process_and_annotate_frame(
+                    frame, fps=0.0, source_label=source_lbl, bypass_velocity_filter=True
+                )
                 cv2.imshow("BISINDO Translator - Citra", annotated)
 
                 key = cv2.waitKey(0) & 0xFF
@@ -317,8 +390,8 @@ class BisindoPipeline:
             self.detector.close()
             return
 
-        # Video / Webcam Mode
-        if isinstance(source, int):
+        is_webcam = isinstance(source, int)
+        if is_webcam:
             cap = cv2.VideoCapture(source, cv2.CAP_DSHOW)
             source_lbl = f"Webcam {source}"
         else:
@@ -333,23 +406,26 @@ class BisindoPipeline:
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
         print(f"\n=== BISINDO Pipeline Berjalan ({source_lbl}) ===")
-        print("Kontrol: [q] Keluar | [c] Hapus Teks | [s] Simpan Tangkapan | [Spasi] Jeda/Lanjut\n")
+        print("Kontrol: [q] Keluar | [m] Mirror | [Spasi] Spasi/Jeda | [b] Hapus 1 | [c] Clear | [s] Foto\n")
 
         prev_time = time.perf_counter()
         fps = 0.0
         paused = False
+        annotated = None
 
         try:
             while True:
                 if not paused:
                     ret, frame = cap.read()
                     if not ret:
-                        if not isinstance(source, int):
+                        if not is_webcam:
                             print("Video selesai. Mengulang kembali dari awal...")
                             cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                             continue
-                        else:
-                            break
+                        break
+
+                    if is_webcam and self.mirror_mode:
+                        frame = cv2.flip(frame, 1)
 
                     curr_time = time.perf_counter()
                     fps = 0.9 * fps + 0.1 * (1.0 / max(1e-4, curr_time - prev_time))
@@ -361,18 +437,28 @@ class BisindoPipeline:
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord('q'):
                     break
+                elif key == ord('m'):
+                    self.mirror_mode = not self.mirror_mode
+                    self.prob_buffer.clear()
+                    self.velocity_filter.reset()
+                    print(f"Mirror mode: {'ON' if self.mirror_mode else 'OFF'}")
+                elif key == ord('b'):
+                    if self.recognized_letters:
+                        self.recognized_letters.pop()
                 elif key == ord('c'):
                     self.recognized_letters.clear()
                     self.last_stable_letter = ""
                     print("Buffer teks dikosongkan.")
                 elif key == ord(' '):
-                    paused = not paused
-                    print("Jeda" if paused else "Lanjut")
-                elif key == ord('s'):
+                    if is_webcam:
+                        self.recognized_letters.append(" ")
+                    else:
+                        paused = not paused
+                        print("Jeda" if paused else "Lanjut")
+                elif key == ord('s') and annotated is not None:
                     snap_name = f"snapshot_{int(time.time())}.jpg"
                     cv2.imwrite(snap_name, annotated)
                     print(f"Tersimpan: {snap_name}")
-
         finally:
             cap.release()
             cv2.destroyAllWindows()
@@ -383,16 +469,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="BISINDO Real-Time Multi-Source Pipeline")
     parser.add_argument("--source", type=str, default=None, help="Input source: webcam index (0, 1), video file path, or image directory")
     parser.add_argument("--model", type=str, default=None, help="Path to trained YOLOv11 .pt model")
+    parser.add_argument("--landmark-model", type=str, default=None, help="Path to trained Landmark MLP .pt model")
     args = parser.parse_args()
 
-    # Determine source
     chosen_source = args.source
     if chosen_source is None:
         chosen_source = interactive_select_source()
-    else:
-        # Check if source is a number (webcam index)
-        if chosen_source.isdigit():
-            chosen_source = int(chosen_source)
+    elif chosen_source.isdigit():
+        chosen_source = int(chosen_source)
 
-    pipeline = BisindoPipeline(yolo_model_path=args.model)
+    is_static = isinstance(chosen_source, str) and Path(chosen_source).exists() and (
+        Path(chosen_source).is_dir() or Path(chosen_source).suffix.lower() in ['.jpg', '.jpeg', '.png', '.bmp']
+    )
+    pipeline = BisindoPipeline(
+        yolo_model_path=args.model,
+        landmark_weights_path=args.landmark_model,
+        static_image_mode=is_static
+    )
     pipeline.run(source=chosen_source)

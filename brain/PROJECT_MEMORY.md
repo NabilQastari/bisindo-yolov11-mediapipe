@@ -103,17 +103,19 @@ E:\Semester 5\C&V\Project Citra\
 - [x] Instalasi dependensi CV lengkap (`torch`, `torchvision`, `opencv-python`, `mediapipe`, `ultralytics`).
 - [x] Deteksi Hardware: AMD Radeon™ Graphics (iGPU) — optimasi inferensi CPU via Velocity Filter divalidasi.
 - [x] Implementasi kode modular `src/`:
-  - `src/utils/box_utils.py`: Adaptive Dual-Hand Unified Bounding Box (42 keypoints).
-  - `src/utils/geometry.py`: 3D joint angle calculations & finger disambiguation.
+  - `src/utils/box_utils.py`: Adaptive Dual-Hand Unified Bounding Box & 1:1 Square Unified ROI (`compute_square_unified_roi`, `crop_square_roi`).
+  - `src/utils/geometry.py`: 3D joint angles, 174-dim Dual-Hand Feature Extractor (`extract_dual_hand_features`), & authentic BISINDO geometric disambiguation (`disambiguate_bisindo_pair` M vs N, B vs F).
   - `src/modules/velocity_filter.py`: Velocity-Aware Transition Filter (Anti-ghost recognition).
   - `src/modules/dual_hand_detector.py`: MediaPipe Tasks HandLandmarker 42 keypoints extractor.
-  - `src/dataset/prep_dataset.py`: MediaPipe-based auto-annotator & YOLO format splitter.
-  - `src/pipeline.py`: Real-time webcam pipeline dengan UI visual & text buffer.
-  - `src/train.py`: Skrip training transfer learning YOLOv11n.
-- [x] Penemuan dataset lokal di `E:\Semester 5\C&V\Dataset\data 1\Citra BISINDO` (26 kelas alfabet A-Z).
-- [x] Auto-anotasi & partisi dataset ke `data/bisindo_yolo/` (312 citra, train: 234, val: 26, test: 52, `data.yaml` siap).
-- [x] Peluncuran & Penyelesaian Training YOLOv11n (30 Epochs selesai 100% dalam 1,041 jam di AMD Ryzen 3 4300U).
-- [x] Evaluasi Performa Model: **mAP@50 = 88.3%**, **mAP@50-95 = 71.7%**, Bobot tersimpan di `weights/bisindo_yolov11n_best.pt` (5.5 MB).
+  - `src/modules/landmark_classifier.py`: PyTorch 42-Keypoint Dual-Hand Landmark MLP (`LandmarkMLP` + `LandmarkClassifierWrapper`).
+  - `src/dataset/prep_cls_dataset.py` & `src/dataset/collector.py`: Stratified classification dataset prep + webcam calibration collector (`run_collect.bat`).
+  - `src/pipeline.py`: Real-time multi-source Hybrid Ensemble pipeline (`0.60 YOLOv11n-cls + 0.40 Landmark MLP` + Temporal Smoothing + PiP Model ROI HUD).
+  - `src/train_cls.py` & `src/train_landmarks.py`: Training pipeline (`run_train.bat`).
+- [x] Penemuan dataset lokal di `E:\Semester 5\C&V\Dataset\data 1\Citra BISINDO` (26 kelas alfabet A-Z, 312 citra).
+- [x] Upgrade Arsitektur ke Hybrid Ensemble (YOLOv11n-cls + 42-Keypoint Landmark MLP):
+  - `YOLOv11n-cls` (35 epochs, imgsz=224, `fliplr=0.0`, augmentasi pencahayaan/rotasi): **Val Top-1 = 100.00% (52/52)**, latensi **7.9 ms**, bobot `weights/bisindo_yolov11n_cls_best.pt` (3.2 MB).
+  - `Landmark MLP` (70 epochs, 25x augmentasi geometri 3D, 6474 sampel latih): **Val Top-1 = 96.08% (49/51)**, bobot `weights/bisindo_landmark_mlp.pt`.
+  - `Combined Ensemble + Disambig`: **Val Top-1 = 100.00% (52/52)**, smoke test `BisindoPipeline` 12/12 tepat (`A, B, C, D, E, F, L, M, N, O, V, Y`).
 - [x] Dokumentasi Lengkap Laporan Eksperimen & Plot Kurva: `brain/04_Implementation/Training_Report_YOLOv11n.md`.
 - [x] Validasi Pengujian Real-Time Webcam (Single-Hand & Dual-Hand 42 Keypoints berhasil diuji pada Webcam 3): `brain/04_Implementation/Realtime_Testing_Report.md`.
 

@@ -105,6 +105,24 @@ Dari rincian per kelas pada log validasi akhir:
 
 ---
 
-## 🚀 Kesiapan Sistem Akhir
-- File bobot terbaik resmi tersimpan di: `E:\Semester 5\C&V\Project Citra\weights\bisindo_yolov11n_best.pt`.
-- Skrip [src/pipeline.py](file:///E:/Semester%205/C&V/Project%20Citra/src/pipeline.py) dan launcher [run_pipeline.bat](file:///E:/Semester%205/C&V/Project%20Citra/run_pipeline.bat) sudah terhubung langsung ke bobot ini.
+## 🚀 Kesiapan Sistem Akhir (Arsitektur Hybrid Ensemble v2)
+
+Untuk mengatasi ketidaksesuaian framing antara dataset *close-up* persegi (`1:1`) dengan frame webcam lebar (`16:9`) serta meningkatkan ketahanan terhadap perbedaan warna kulit/pencahayaan, sistem ditingkatkan menjadi **Hybrid Ensemble**:
+
+1. **Adaptive 1:1 Square Unified ROI (`compute_square_unified_roi` + `crop_square_roi`)**:
+   - Menyatukan seluruh 42 keypoint (jika 2 tangan aktif) ke dalam crop persegi `224x224` yang bersih tanpa overlay gambar.
+2. **YOLOv11n-cls (`weights/bisindo_yolov11n_cls_best.pt`, 3.2 MB)**:
+   - Dilatih 35 epoch (`imgsz=224`, `AdamW`, `fliplr=0.0`, augmentasi HSV/rotasi/scale/erasing) pada `data/bisindo_cls/` (260 train, 52 val).
+   - **Hasil Validasi Top-1**: **100,00% (52/52)** dengan latensi inferensi CPU **7,9 ms / frame** (~11x lebih cepat dari varian detection).
+3. **42-Keypoint Dual-Hand Landmark MLP (`weights/bisindo_landmark_mlp.pt`)**:
+   - Arsitektur PyTorch MLP (`174 -> 256 -> 128 -> 26`) memakai fitur koordinat relatif pergelangan yang dinormalisasi skala telapak, sudut sendi 3D, dan jarak antar-tangan, dengan **25x augmentasi geometri 3D** (6.474 sampel latih).
+   - **Hasil Validasi Top-1 (terdeteksi MediaPipe)**: **96,08% (49/51)**.
+4. **Ensemble Fusion (`0.60 YOLO-cls + 0.40 Landmark MLP`) + Temporal Smoothing + Disambiguasi BISINDO (M vs N, B vs F)**:
+   - **Hasil Validasi Ensemble Top-1**: **100,00% (52/52)**.
+   - Smoke test end-to-end `BisindoPipeline`: **12/12 kelas uji (`A, B, C, D, E, F, L, M, N, O, V, Y`) terprediksi 100% tepat**.
+
+### Grafik Pelatihan & Confusion Matrix YOLOv11n-cls
+![Kurva YOLOv11n-cls](../assets/yolov11n_cls_results.png)
+![Confusion Matrix YOLOv11n-cls](../assets/yolov11n_cls_confusion_matrix.png)
+
+- Skrip [src/pipeline.py](file:///E:/Semester%205/C&V/Project%20Citra/src/pipeline.py), [run_pipeline.bat](file:///E:/Semester%205/C&V/Project%20Citra/run_pipeline.bat), [run_train.bat](file:///E:/Semester%205/C&V/Project%20Citra/run_train.bat), dan kalibrator kamera pribadi [run_collect.bat](file:///E:/Semester%205/C&V/Project%20Citra/run_collect.bat) telah siap digunakan.
