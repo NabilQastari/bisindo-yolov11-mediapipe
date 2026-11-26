@@ -1,19 +1,23 @@
 @echo off
+setlocal
 title Training BISINDO Hybrid Ensemble (YOLOv11n-cls + Landmark MLP)
 echo ========================================================
-echo    Training BISINDO Hybrid Ensemble (Partisi E: Only)
+echo    Training BISINDO Hybrid Ensemble
 echo    1. Prep Dataset (data/bisindo_cls)
 echo    2. Train YOLOv11n-cls (Visual Classifier)
 echo    3. Train Dual-Hand Landmark MLP (42 Keypoints)
 echo ========================================================
 echo.
 
-cd /d "E:\Semester 5\C&V\Project Citra"
-set "PYTHONPATH=E:\Semester 5\C&V\Project Citra;%PYTHONPATH%"
-set "PYTHON_EXE=E:\Semester 5\C&V\Project Citra\venv\Scripts\python.exe"
+set "ROOT=%~dp0"
+if "%ROOT:~-1%"=="\" set "ROOT=%ROOT:~0,-1%"
+cd /d "%ROOT%"
+set "PYTHONPATH=%ROOT%;%PYTHONPATH%"
+set "PYTHON_EXE=%ROOT%\venv\Scripts\python.exe"
 
 if not exist "%PYTHON_EXE%" (
-    echo [ERROR] Virtual Environment tidak ditemukan di E:\Semester 5\C&V\Project Citra\venv
+    echo [ERROR] Virtual Environment tidak ditemukan di "%ROOT%\venv".
+    echo         Jalankan setup_env.bat terlebih dahulu.
     pause
     exit /b 1
 )

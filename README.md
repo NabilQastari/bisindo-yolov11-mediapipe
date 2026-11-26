@@ -39,16 +39,12 @@ Proyek ini mengimplementasikan sistem penerjemah alfabet **Bahasa Isyarat Indone
 
 ---
 
-## 🛠️ Instalasi & Menjalankan Dependensi
-```bash
-# Clone repositori ini
-git clone https://github.com/USERNAME/bisindo-yolov11-mediapipe.git
-cd bisindo-yolov11-mediapipe
+## 🛠️ Instalasi & Menjalankan di Laptop Baru (Portable)
+Bobot model terlatih sudah tersedia di folder `weights/` sehingga **tidak perlu training ulang** untuk langsung menjalankan aplikasi.
 
-# Buat virtual environment
-python -m venv venv
-venv\Scripts\activate
+1. **Ekstrak** file `.zip` ke folder mana saja (disarankan di Drive D: atau E:).
+2. Pastikan **Python 3.10 – 3.12** sudah terpasang di laptop target (*centang "Add python.exe to PATH"* saat instalasi Python).
+3. Klik ganda **`setup_env.bat`** (hanya 1 kali di awal untuk membuat `venv` lokal dan menginstal dependensi dari `requirements.txt`).
+4. Klik ganda **`run_pipeline.bat`** untuk memilih kamera/video/gambar lewat GUI dan mulai menerjemahkan BISINDO secara *real-time*.
 
-# Install dependensi
-pip install -r requirements.txt
-```
+*(Opsional: Klik ganda **`run_collect.bat`** untuk merekam pose tangan dari webcam laptop baru, lalu **`run_train.bat`** untuk melatih ulang ensemble).*

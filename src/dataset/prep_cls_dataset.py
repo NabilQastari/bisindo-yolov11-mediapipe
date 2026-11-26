@@ -37,8 +37,13 @@ def prepare_bisindo_cls_dataset(
     custom_path = Path(custom_source_dir)
     out_path = Path(output_dir)
 
+    if not base_path.exists() and not custom_path.exists():
+        raise FileNotFoundError(
+            f"Dataset tidak ditemukan di {base_path} maupun {custom_path}. "
+            "Jalankan run_collect.bat untuk merekam sampel atau sediakan dataset dasar."
+        )
     if not base_path.exists():
-        raise FileNotFoundError(f"Base dataset not found: {base_path}")
+        print(f"[INFO] Base dataset tidak ada di {base_path}; hanya memakai custom_bisindo.")
 
     if out_path.exists():
         shutil.rmtree(out_path)

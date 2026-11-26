@@ -51,7 +51,7 @@ def train_yolov11(
     print("\nTraining completed!")
     best_weights = Path(output_dir) / "bisindo_yolov11n" / "weights" / "best.pt"
     if best_weights.exists():
-        dest = Path(r"E:\Semester 5\C&V\Project Citra\weights\bisindo_yolov11n_best.pt")
+        dest = PROJECT_ROOT / "weights" / "bisindo_yolov11n_best.pt"
         dest.parent.mkdir(parents=True, exist_ok=True)
         import shutil
         shutil.copy(str(best_weights), str(dest))

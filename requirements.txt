@@ -3,6 +3,7 @@ opencv-python>=4.8.0
 mediapipe>=0.10.14,<1.0.0
 ultralytics>=8.1.0
 numpy>=1.24.0
+pillow>=9.0.0
 
 # Graphify & Knowledge Graph Tooling
 graphifyy>=0.1.0
