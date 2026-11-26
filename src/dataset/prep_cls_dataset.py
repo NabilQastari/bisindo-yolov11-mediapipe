@@ -25,7 +25,8 @@ def prepare_bisindo_cls_dataset(
     output_dir: str = str(PROJECT_ROOT / "data" / "bisindo_cls"),
     val_count_per_base_class: int = 2,
     target_size: int = 320,
-    seed: int = 42
+    seed: int = 42,
+    live_variants: int = 4
 ) -> Dict[str, any]:
     """
     Creates data/bisindo_cls/{train,val}/{A..Z} with zero train/val leakage
@@ -100,7 +101,14 @@ def prepare_bisindo_cls_dataset(
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
 
-    total_train = stats["train_base"] + stats["train_custom"]
+    stats["train_live"] = 0
+    if live_variants > 0:
+        from src.dataset.live_sim import generate_live_cls_variants
+        print(f"Generating live-simulated ROI variants ({live_variants} per train image)...")
+        stats["train_live"] = generate_live_cls_variants(manifest["train"], out_path, live_variants, seed=seed)
+        print(f"Live-simulated crops saved: {stats['train_live']}")
+
+    total_train = stats["train_base"] + stats["train_custom"] + stats["train_live"]
     total_val = stats["val_base"] + stats["val_custom"]
     print(f"Prepared BISINDO classification dataset at: {out_path}")
     print(f"Train images: {total_train} (base={stats['train_base']}, custom={stats['train_custom']})")

@@ -21,6 +21,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.modules.dual_hand_detector import DualHandDetector
 from src.modules.landmark_classifier import LandmarkMLP
 from src.utils.geometry import extract_dual_hand_features
+from src.dataset.live_sim import make_live_variant
 
 
 def _augment_raw_landmarks(
@@ -37,6 +38,18 @@ def _augment_raw_landmarks(
         valid_pts.append(np.asarray(lms_left, dtype=np.float32))
     if lms_right:
         valid_pts.append(np.asarray(lms_right, dtype=np.float32))
+
+    # Mirror augmentation: horizontal flip swaps left/right hand slots and mirrors x
+    if rng.random() < 0.5:
+        def _mirror(lms):
+            return None if lms is None else [(1.0 - x, y, z) for (x, y, z) in lms]
+        lms_left, lms_right = _mirror(lms_right), _mirror(lms_left)
+        valid_pts = []
+        if lms_left:
+            valid_pts.append(np.asarray(lms_left, dtype=np.float32))
+        if lms_right:
+            valid_pts.append(np.asarray(lms_right, dtype=np.float32))
+
     all_pts = np.concatenate(valid_pts, axis=0)
     centroid = np.mean(all_pts, axis=0)
 
@@ -71,6 +84,8 @@ def train_landmark_classifier(
     manifest_path: str = str(PROJECT_ROOT / "data" / "bisindo_cls" / "split_manifest.json"),
     weights_out: str = str(PROJECT_ROOT / "weights" / "bisindo_landmark_mlp.pt"),
     augment_factor: int = 25,
+    live_variants: int = 8,
+    live_synthetic_aug: int = 3,
     epochs: int = 70,
     seed: int = 42
 ):
@@ -112,6 +127,19 @@ def train_landmark_classifier(
             aug_l, aug_r = _augment_raw_landmarks(res.landmarks_left, res.landmarks_right, rng)
             X_train_list.append(extract_dual_hand_features(aug_l, aug_r))
             y_train_list.append(lbl)
+
+        # Real MediaPipe detections on live-simulated variants (flip / far / blur / lighting)
+        for _ in range(live_variants):
+            var_frame = make_live_variant(img, rng)
+            vres = detector.process_frame(var_frame)
+            if not vres.has_left and not vres.has_right:
+                continue
+            X_train_list.append(extract_dual_hand_features(vres.landmarks_left, vres.landmarks_right))
+            y_train_list.append(lbl)
+            for _ in range(live_synthetic_aug):
+                al, ar = _augment_raw_landmarks(vres.landmarks_left, vres.landmarks_right, rng)
+                X_train_list.append(extract_dual_hand_features(al, ar))
+                y_train_list.append(lbl)
 
     for item in manifest["val"]:
         img = cv2.imread(item["src"])

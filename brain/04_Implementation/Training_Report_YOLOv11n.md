@@ -112,14 +112,17 @@ Untuk mengatasi ketidaksesuaian framing antara dataset *close-up* persegi (`1:1`
 1. **Adaptive 1:1 Square Unified ROI (`compute_square_unified_roi` + `crop_square_roi`)**:
    - Menyatukan seluruh 42 keypoint (jika 2 tangan aktif) ke dalam crop persegi `224x224` yang bersih tanpa overlay gambar.
 2. **YOLOv11n-cls (`weights/bisindo_yolov11n_cls_best.pt`, 3.2 MB)**:
-   - Dilatih 35 epoch (`imgsz=224`, `AdamW`, `fliplr=0.0`, augmentasi HSV/rotasi/scale/erasing) pada `data/bisindo_cls/` (260 train, 52 val).
-   - **Hasil Validasi Top-1**: **100,00% (52/52)** dengan latensi inferensi CPU **7,9 ms / frame** (~11x lebih cepat dari varian detection).
+   - Dilatih 20 epoch (`imgsz=224`, `AdamW`, `fliplr=0.5`, augmentasi HSV/rotasi/scale/erasing) pada `data/bisindo_cls/` (**1.160 citra latih**: 260 asli + 900 crop simulasi webcam live `live_sim.py`, 52 val).
+   - **Hasil Validasi Top-1**: **100,00% (52/52)** dengan latensi inferensi CPU **5,5 ms / frame**.
 3. **42-Keypoint Dual-Hand Landmark MLP (`weights/bisindo_landmark_mlp.pt`)**:
-   - Arsitektur PyTorch MLP (`174 -> 256 -> 128 -> 26`) memakai fitur koordinat relatif pergelangan yang dinormalisasi skala telapak, sudut sendi 3D, dan jarak antar-tangan, dengan **25x augmentasi geometri 3D** (6.474 sampel latih).
+   - Arsitektur PyTorch MLP (`174 -> 256 -> 128 -> 26`) dengan **13.678 sampel latih** (25x augmentasi geometri 3D + *mirror handedness swap* + deteksi MediaPipe nyata pada citra simulasi webcam live).
    - **Hasil Validasi Top-1 (terdeteksi MediaPipe)**: **96,08% (49/51)**.
-4. **Ensemble Fusion (`0.60 YOLO-cls + 0.40 Landmark MLP`) + Temporal Smoothing + Disambiguasi BISINDO (M vs N, B vs F)**:
-   - **Hasil Validasi Ensemble Top-1**: **100,00% (52/52)**.
-   - Smoke test end-to-end `BisindoPipeline`: **12/12 kelas uji (`A, B, C, D, E, F, L, M, N, O, V, Y`) terprediksi 100% tepat**.
+4. **Ensemble Fusion (`0.60 YOLO-cls + 0.40 Landmark MLP`) + Benchmark Ketahanan Live**:
+   - Pengujian simulasi kondisi live (`orig`, `flip`, `far`, `far+flip`, `lowres+blur`, `motion blur`, `dark`, `bright`) membuktikan ketahanan terhadap kamera ter-mirror dan jarak tangan jauh:
+     - `flip` (Mirror): **44% → 100%** (`YOLO 100%`, `LM 90%`)
+     - `far` (Tangan jauh di 16:9): **81% → 88%**
+     - `far+flip` (Jauh + Mirror): **38% → 88%**
+     - `lowres+blur` / `motion blur` / `bright`: **100%** (`dark`: **98%**)
 
 ### Grafik Pelatihan & Confusion Matrix YOLOv11n-cls
 ![Kurva YOLOv11n-cls](../assets/yolov11n_cls_results.png)

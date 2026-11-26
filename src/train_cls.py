@@ -17,7 +17,7 @@ from ultralytics import YOLO
 
 def train_yolov11_cls(
     data_dir: str = str(PROJECT_ROOT / "data" / "bisindo_cls"),
-    epochs: int = 35,
+    epochs: int = 20,
     batch_size: int = 16,
     img_size: int = 224,
     device: str = "cpu",
@@ -47,7 +47,7 @@ def train_yolov11_cls(
         optimizer="AdamW",
         lr0=0.002,
         weight_decay=0.0005,
-        fliplr=0.0,
+        fliplr=0.5,  # webcam may be mirrored vs dataset; model must be flip-invariant
         flipud=0.0,
         hsv_h=0.03,
         hsv_s=0.6,
@@ -74,7 +74,7 @@ def train_yolov11_cls(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train YOLOv11n-cls on BISINDO dataset")
-    parser.add_argument("--epochs", type=int, default=35)
+    parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch", type=int, default=16)
     parser.add_argument("--imgsz", type=int, default=224)
     args = parser.parse_args()

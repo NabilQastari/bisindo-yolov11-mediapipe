@@ -109,14 +109,14 @@ E:\Semester 5\C&V\Project Citra\
   - `src/modules/velocity_filter.py`: Velocity-Aware Transition Filter (Anti-ghost recognition).
   - `src/modules/dual_hand_detector.py`: MediaPipe Tasks HandLandmarker 42 keypoints extractor.
   - `src/modules/landmark_classifier.py`: PyTorch 42-Keypoint Dual-Hand Landmark MLP (`LandmarkMLP` + `LandmarkClassifierWrapper`).
-  - `src/dataset/prep_cls_dataset.py` & `src/dataset/collector.py`: Stratified classification dataset prep + webcam calibration collector (`run_collect.bat`).
+  - `src/dataset/prep_cls_dataset.py`, `src/dataset/live_sim.py`, & `src/dataset/collector.py`: Stratified classification dataset prep + simulator kondisi webcam live (`flip`, `far`, `blur`, pencahayaan) + webcam calibration collector (`run_collect.bat`).
   - `src/pipeline.py`: Real-time multi-source Hybrid Ensemble pipeline (`0.60 YOLOv11n-cls + 0.40 Landmark MLP` + Temporal Smoothing + PiP Model ROI HUD).
   - `src/train_cls.py` & `src/train_landmarks.py`: Training pipeline (`run_train.bat`).
 - [x] Penemuan dataset lokal di `E:\Semester 5\C&V\Dataset\data 1\Citra BISINDO` (26 kelas alfabet A-Z, 312 citra).
-- [x] Upgrade Arsitektur ke Hybrid Ensemble (YOLOv11n-cls + 42-Keypoint Landmark MLP):
-  - `YOLOv11n-cls` (35 epochs, imgsz=224, `fliplr=0.0`, augmentasi pencahayaan/rotasi): **Val Top-1 = 100.00% (52/52)**, latensi **7.9 ms**, bobot `weights/bisindo_yolov11n_cls_best.pt` (3.2 MB).
-  - `Landmark MLP` (70 epochs, 25x augmentasi geometri 3D, 6474 sampel latih): **Val Top-1 = 96.08% (49/51)**, bobot `weights/bisindo_landmark_mlp.pt`.
-  - `Combined Ensemble + Disambig`: **Val Top-1 = 100.00% (52/52)**, smoke test `BisindoPipeline` 12/12 tepat (`A, B, C, D, E, F, L, M, N, O, V, Y`).
+- [x] Upgrade Arsitektur ke Hybrid Ensemble v2.1 (Live-Robustness Training: 1.160 citra YOLO + 13.678 sampel Landmark MLP):
+  - `YOLOv11n-cls` (20 epochs, imgsz=224, `fliplr=0.5`, 260 asli + 900 crop kondisi live): **Val Top-1 = 100,00% (52/52)**, latensi **5,5 ms**, bobot `weights/bisindo_yolov11n_cls_best.pt` (3,2 MB).
+  - `Landmark MLP` (70 epochs, 13.678 sampel dengan mirror handedness swap + deteksi live-sim): **Val Top-1 = 96,08% (49/51)**, bobot `weights/bisindo_landmark_mlp.pt`.
+  - Benchmark Ketahanan Live (`robust_eval`): `flip` **44% → 100%**, `far+flip` **38% → 88%**, `far` **81% → 88%**, `bright` **98% → 100%**, `motion blur` **100%** (LM **90% → 100%**).
 - [x] Dokumentasi Lengkap Laporan Eksperimen & Plot Kurva: `brain/04_Implementation/Training_Report_YOLOv11n.md`.
 - [x] Validasi Pengujian Real-Time Webcam (Single-Hand & Dual-Hand 42 Keypoints berhasil diuji pada Webcam 3): `brain/04_Implementation/Realtime_Testing_Report.md`.
 
