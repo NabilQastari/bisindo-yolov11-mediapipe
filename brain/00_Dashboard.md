@@ -69,4 +69,5 @@ graph TD
 ## ⚡ Quick Links & Deliverables
 * Dokumen Memory & State Sesi: [[PROJECT_MEMORY]]
 * Dokumen Usulan Resmi: [USULAN_MODIFIKASI_PENELITIAN_BISINDO.docx](file:///e:/Semester%205/C&V/Project%20Citra/brain/USULAN_MODIFIKASI_PENELITIAN_BISINDO.docx)
+* Panduan Pose Alfabet BISINDO (PDF): [PANDUAN_POSE_BISINDO_A_Z.pdf](file:///e:/Semester%205/C&V/Project%20Citra/brain/PANDUAN_POSE_BISINDO_A_Z.pdf)
 * Panduan Saran Fitur: [[SARAN_MODIFIKASI_FITUR_BISINDO]]
